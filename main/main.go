@@ -54,7 +54,7 @@ func main() {
 
 	roomService := postgresql.RoomService{DB: pool}
 	roomHandler := myHttp.RoomHandler{RoomService: roomService}
-	
+
 	messageService := postgresql.MessageService{DB: pool, Rooms: rooms}
 	messageHandler := myHttp.MessageHandler{MessageService: messageService}
 
@@ -89,19 +89,24 @@ func main() {
 func wireEventHandler(roomService postgresql.RoomService) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		// Grab the user id from the path
 		userId, err := uuid.Parse(r.PathValue("userId"))
 		if err != nil {
 			log.Fatalf("Unable to parse user id: %v\n", err)
 			return
 		}
 
+		// Create a send channel for the newly-connected user
 		sendChannel := make(chan opendisc.Message)
+
+		defer close(sendChannel)
 
 		roomClient := logic.RoomClient{
 			UserID:      userId,
 			SendChannel: sendChannel,
 		}
 
+		// Add this user's send channel to all of the rooms they belong to
 		userRooms, err := roomService.GetRoomsForUser(context.Background(), userId)
 
 		if err != nil {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -53,7 +54,7 @@ func main() {
 	userHandler := myHttp.UserHandler{UserService: userService}
 
 	roomService := postgresql.RoomService{DB: pool}
-	roomHandler := myHttp.RoomHandler{RoomService: roomService}
+	roomHandler := myHttp.RoomHandler{RoomService: roomService, Rooms: rooms}
 	
 	messageService := postgresql.MessageService{DB: pool, Rooms: rooms}
 	messageHandler := myHttp.MessageHandler{MessageService: messageService}
@@ -136,7 +137,12 @@ func wireEventHandler(roomService postgresql.RoomService) func(w http.ResponseWr
 
 			case message := <-sendChannel:
 				fmt.Println("Received message in SSE handler")
-				fmt.Fprintf(w, "data: %s\n\n", fmt.Sprintf("Event %s", message.Message))
+				jsonBytes, err := json.Marshal(message)
+				if err != nil {
+					fmt.Printf("Error marshaling message: %v\n", err)
+					continue
+				}
+				fmt.Fprintf(w, "data: %s\n\n", string(jsonBytes))
 				w.(http.Flusher).Flush()
 			}
 		}

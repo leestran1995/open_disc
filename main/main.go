@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -141,7 +142,11 @@ func wireEventHandler(roomService postgresql.RoomService) func(w http.ResponseWr
 
 			case message := <-sendChannel:
 				fmt.Println("Received message in SSE handler")
-				fmt.Fprintf(w, "data: %s\n\n", fmt.Sprintf("Event %s", message.Message))
+				asJson, err := json.Marshal(message)
+				if err != nil {
+					continue
+				}
+				fmt.Fprintf(w, "data: %s\n\n", fmt.Sprintf("Event %s", string(asJson)))
 				w.(http.Flusher).Flush()
 			}
 		}

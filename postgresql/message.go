@@ -22,13 +22,13 @@ func (s MessageService) Create(ctx context.Context, request opendisc.MessageCrea
 		 VALUES ($1, $2, $3)
 		 RETURNING id, message, user_id, timestamp, server_id`,
 		request.ServerID, request.Message, request.UserID,
-	).Scan(&message.ID, &message.Message, &message.UserID, &message.TimeStamp, &message.ServerID)
+	).Scan(&message.ID, &message.Message, &message.UserID, &message.TimeStamp, &message.RoomID)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.Rooms[message.ServerID].Send(message)
+	err = s.Rooms[message.RoomID].Send(message)
 
 	if err != nil {
 		return nil, err

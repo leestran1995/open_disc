@@ -3,6 +3,7 @@ package http
 import (
 	"net/http"
 	opendisc "open_discord"
+	"open_discord/logic"
 	"open_discord/postgresql"
 
 	"github.com/gin-gonic/gin"
@@ -11,6 +12,7 @@ import (
 
 type RoomHandler struct {
 	RoomService postgresql.RoomService
+	Rooms       map[uuid.UUID]*logic.Room
 }
 
 func BindRoomRoutes(router *gin.Engine, RoomHandler *RoomHandler) {
@@ -29,7 +31,15 @@ func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
 	u, err := h.RoomService.Create(c.Request.Context(), request)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
+
+	h.Rooms[u.ID] = &logic.Room{
+		ConnectedClients: make(map[uuid.UUID]*logic.RoomClient),
+		RoomID:           u.ID,
+		Name:             u.Name,
+	}
+
 	c.JSON(http.StatusCreated, u)
 }
 

@@ -78,7 +78,6 @@ func (s *SseHandler) CreateNewSseConnection(w http.ResponseWriter, r *http.Reque
 	for {
 		select {
 		case <-r.Context().Done():
-			fmt.Println("Client disconnected")
 
 			for _, ur := range userRooms {
 				matchingRoom := s.Rooms[ur.ID]
@@ -88,7 +87,6 @@ func (s *SseHandler) CreateNewSseConnection(w http.ResponseWriter, r *http.Reque
 			return
 
 		case message := <-sendChannel:
-			fmt.Println("Received message in SSE handler")
 			jsonBytes, err := json.Marshal(message)
 			if err != nil {
 				fmt.Printf("Error marshaling message: %v\n", err)

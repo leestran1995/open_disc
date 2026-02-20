@@ -13,6 +13,7 @@ import (
 // SendChannel is the channel that their SSE connection will receive messages from
 type RoomClient struct {
 	UserID      uuid.UUID
+	Nickname    string
 	SendChannel chan opendisc.RoomEvent
 }
 
@@ -27,7 +28,7 @@ type Room struct {
 }
 
 func (r *Room) ConnectToRoom(roomClient RoomClient) {
-	fmt.Printf("Connecting user %s to room %s\n", r.RoomID, roomClient.UserID)
+	fmt.Printf("Connecting user %s to room %s\n", roomClient.UserID, r.Name)
 	r.ConnectedClients[roomClient.UserID] = &roomClient
 
 	connectedEvent := opendisc.UserEvent{

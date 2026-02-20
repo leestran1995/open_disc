@@ -1,6 +1,6 @@
 <script>
   import { createRoom, joinRoom } from './api.js';
-  import { rooms, activeRoomId, currentUser } from './stores.js';
+  import { rooms, activeRoomId, currentUser, messagesByRoom } from './stores.js';
   import ThemeToggle from './ThemeToggle.svelte';
   import { connectSSE, disconnectSSE } from './sse.js';
 
@@ -113,6 +113,9 @@
     color: var(--text-primary);
     font-size: 0.9rem;
     border-radius: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .room-item:hover {

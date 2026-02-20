@@ -1,7 +1,7 @@
 ---
 # open_disc-w0nf
 title: GET /users/:id/rooms endpoint
-status: todo
+status: done
 type: task
 priority: normal
 tags:
@@ -13,3 +13,5 @@ parent: open_disc-533i
 ---
 
 Expose RoomService.GetRoomsForUser (already exists in postgresql/room.go) as an HTTP route. Needed for the sidebar room list.
+
+Implemented in `sse_refactor` branch — wired as `GET /users/:id/rooms` in `http/room_handler.go`.

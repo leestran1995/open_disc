@@ -9,24 +9,27 @@ import (
 	opendisc "open_discord"
 	"open_discord/logic"
 	"open_discord/postgresql"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 type SseHandler struct {
-	RoomService *postgresql.RoomService
-	Rooms       map[uuid.UUID]*logic.Room
+	RoomService    *postgresql.RoomService
+	MessageService *postgresql.MessageService
+	Rooms          map[uuid.UUID]*logic.Room
 }
 
-func (s *SseHandler) WireEventHandler(w http.ResponseWriter, r *http.Request) {
+func (s *SseHandler) CreateNewSseConnection(w http.ResponseWriter, r *http.Request) {
 
+	// Grab the user ID from the path, eventually this will come from an auth token header
 	userId, err := uuid.Parse(r.PathValue("userId"))
 	if err != nil {
 		log.Fatalf("Unable to parse user id: %v\n", err)
 		return
 	}
 
-	sendChannel := make(chan opendisc.Message)
+	sendChannel := make(chan opendisc.RoomEvent, 50)
 
 	roomClient := logic.RoomClient{
 		UserID:      userId,
@@ -34,6 +37,25 @@ func (s *SseHandler) WireEventHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userRooms, err := s.RoomService.GetRoomsForUser(context.Background(), userId)
+
+	for _, userRoom := range userRooms {
+		roomMessages, err := s.MessageService.GetMessagesByTimestamp(context.Background(), userRoom.ID, time.Now())
+		if err != nil {
+			log.Fatalf("Unable to get messages by timestamp: %v\n", err)
+		}
+
+		toJson, err := json.Marshal(roomMessages)
+		if err != nil {
+			log.Fatalf("Unable to marshal room messages: %v\n", err)
+		}
+
+		roomEvent := opendisc.RoomEvent{
+			RoomEventType: opendisc.HistoricalMessages,
+			Payload:       toJson,
+		}
+
+		sendChannel <- roomEvent
+	}
 
 	if err != nil {
 		log.Fatalf("Unable to get all rooms: %v\n", err)

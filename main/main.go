@@ -58,8 +58,9 @@ func main() {
 	messageHandler := myHttp.MessageHandler{MessageService: messageService}
 
 	sseHandler := myHttp.SseHandler{
-		RoomService: &roomService,
-		Rooms:       rooms,
+		RoomService:    &roomService,
+		Rooms:          rooms,
+		MessageService: &messageService,
 	}
 
 	allRooms, err := roomService.GetAllRooms(context.Background())
@@ -86,6 +87,6 @@ func main() {
 	go router.Run("localhost:8080")
 
 	// Start SSE listener
-	http.HandleFunc("/connect/{userId}", sseHandler.WireEventHandler)
+	http.HandleFunc("/connect/{userId}", sseHandler.CreateNewSseConnection)
 	http.ListenAndServe("localhost:8081", nil)
 }

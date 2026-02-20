@@ -54,8 +54,6 @@ func (r *Room) DisconnectFromRoom(roomClient RoomClient) {
 	fmt.Printf("Disconnecting user %s from room %s\n", r.RoomID, roomClient.UserID)
 	delete(r.ConnectedClients, roomClient.UserID)
 
-	r.ConnectedClients[roomClient.UserID] = &roomClient
-
 	connectedEvent := opendisc.UserEvent{
 		RoomID: r.RoomID,
 		UserID: roomClient.UserID,

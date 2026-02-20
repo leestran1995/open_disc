@@ -1,6 +1,6 @@
 <script>
-  import { createRoom, joinRoom, getRoomMessages } from './api.js';
-  import { rooms, activeRoomId, currentUser, messagesByRoom } from './stores.js';
+  import { createRoom, joinRoom } from './api.js';
+  import { rooms, activeRoomId, currentUser } from './stores.js';
   import ThemeToggle from './ThemeToggle.svelte';
   import { connectSSE, disconnectSSE } from './sse.js';
 
@@ -25,16 +25,8 @@
     creating = false;
   }
 
-  async function selectRoom(roomId) {
+  function selectRoom(roomId) {
     activeRoomId.set(roomId);
-    // Load message history if we don't have it yet
-    const current = $messagesByRoom;
-    if (!current[roomId]) {
-      const msgs = await getRoomMessages(roomId);
-      if (msgs) {
-        messagesByRoom.update((m) => ({ ...m, [roomId]: msgs }));
-      }
-    }
   }
 
   function logout() {

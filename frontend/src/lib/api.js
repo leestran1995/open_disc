@@ -46,13 +46,9 @@ export function joinRoom(roomId, userId) {
   });
 }
 
-export function sendMessage(serverId, message, userId) {
+export function sendMessage(roomId, message, userId) {
   return request('/messages', {
     method: 'POST',
-    body: JSON.stringify({ server_id: serverId, message, user_id: userId }),
+    body: JSON.stringify({ room_id: roomId, message, user_id: userId }),
   });
-}
-
-export function getRoomMessages(roomId) {
-  return request(`/rooms/${roomId}/messages`);
 }

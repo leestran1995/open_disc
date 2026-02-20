@@ -68,5 +68,6 @@
     flex-direction: column;
     height: 100vh;
     overflow: hidden;
+    min-width: 0;
   }
 </style>

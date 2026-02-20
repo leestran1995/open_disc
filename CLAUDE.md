@@ -36,7 +36,7 @@ CREATE DATABASE open_disc;
 CREATE SCHEMA open_discord;
 CREATE TABLE open_discord.users (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), nickname VARCHAR(255) NOT NULL);
 CREATE TABLE open_discord.rooms (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), name VARCHAR(255) NOT NULL);
-CREATE TABLE open_discord.messages (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), server_id UUID NOT NULL REFERENCES open_discord.rooms(id), message TEXT NOT NULL, user_id UUID NOT NULL REFERENCES open_discord.users(id), timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE open_discord.messages (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), room_id UUID NOT NULL REFERENCES open_discord.rooms(id), message TEXT NOT NULL, user_id UUID NOT NULL REFERENCES open_discord.users(id), timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE open_discord.user_room_pivot (user_id UUID NOT NULL REFERENCES open_discord.users(id), room_id UUID NOT NULL REFERENCES open_discord.rooms(id), PRIMARY KEY (user_id, room_id));
 ```
 
@@ -60,11 +60,11 @@ Start both servers (two terminals):
 # Terminal 1: Backend (ports 8080 + 8081)
 go run ./main/main.go
 
-# Terminal 2: Frontend (port 5173)
+# Terminal 2: Frontend (port 4000)
 cd frontend && bun run dev
 ```
 
-Open http://localhost:5173. The Vite dev server proxies `/api/*` to the Go REST server (8080) and `/sse/*` to the SSE server (8081), so no CORS config is needed during dev.
+Open http://localhost:4000. The Vite dev server (hardcoded to port 4000 via `strictPort`) proxies `/api/*` to the Go REST server (8080) and `/sse/*` to the SSE server (8081), so no CORS config is needed during dev.
 
 ## Architecture
 
@@ -89,8 +89,8 @@ Open http://localhost:5173. The Vite dev server proxies `/api/*` to the Go REST 
 | `app.css` | Solarized light/dark CSS custom properties |
 | `App.svelte` | Root layout, login gate, session restore from localStorage |
 | `lib/stores.js` | Shared writable stores: `currentUser`, `rooms`, `activeRoomId`, `messagesByRoom` |
-| `lib/api.js` | REST client — all fetch calls go through `/api/*` (Vite proxies to 8080) |
-| `lib/sse.js` | `EventSource` manager — connects via `/sse/connect/:userId`, parses JSON events |
+| `lib/api.js` | REST client — all fetch calls go through `/api/*` (Vite proxies to 8080). Uses `room_id` in message payloads. |
+| `lib/sse.js` | `EventSource` manager — connects via `/sse/connect/:userId`, unwraps `RoomEvent` envelope, handles `new_message`, `historical_messages`, `user_joined`, `user_left` |
 | `lib/theme.js` | Dark/light toggle with `localStorage` persistence |
 | `lib/Login.svelte` | Nickname form, creates user via API, connects SSE |
 | `lib/Sidebar.svelte` | Room list, create room + join, logout, reconnects SSE after joining rooms |
@@ -105,13 +105,14 @@ Open http://localhost:5173. The Vite dev server proxies `/api/*` to the Go REST 
 **Real-time messaging flow:**
 
 1. Client connects to `GET /connect/:userId` (SSE endpoint on port 8081)
-2. `logic/room_connections.go` registers the client's send channel with all rooms the user has joined
-3. When `POST /messages` is called, the message is saved to DB and fanned out to all connected clients in that room via their Go channels
-4. SSE events are JSON-serialized `Message` structs
-5. Frontend parses incoming JSON, deduplicates by message `id`, and appends to `messagesByRoom` store
+2. `http/sse_handler.go` looks up the user's rooms, sends `historical_messages` events (last 10 per room), then registers the client's send channel with each room
+3. When `POST /messages` is called, the message is saved to DB and fanned out to all connected clients in that room via their Go channels as a `RoomEvent` with type `new_message`
+4. All SSE events use the `RoomEvent` envelope: `{ "room_event_type": "...", "payload": <JSON> }`
+5. Frontend `sse.js` unwraps the envelope, dispatches by event type, deduplicates by message `id`, and updates the `messagesByRoom` store
 6. Disconnection (context cancel) removes the client from all room maps
+7. `user_joined` / `user_left` events are broadcast to room members on connect/disconnect
 
-**In-memory state** (`logic/room_connections.go`): `rooms map[UUID]*Room` where each `Room` holds a map of connected `RoomClient`s, each with a `SendChannel chan Message`. New rooms are registered in this map at startup (from DB) and on create (via `RoomHandler`).
+**In-memory state** (`logic/room_connections.go`): `rooms map[UUID]*Room` where each `Room` holds a map of connected `RoomClient`s, each with a `SendChannel chan RoomEvent` (buffered, capacity 50). New rooms are registered in this map at startup (from DB) and on create (via `RoomHandler`).
 
 ## API Endpoints
 
@@ -123,16 +124,15 @@ Open http://localhost:5173. The Vite dev server proxies `/api/*` to the Go REST 
 | POST | `/rooms` | Create room `{name}` |
 | GET | `/rooms/:id` | Get room |
 | POST | `/rooms/:id/join` | Join room `{user_id}` |
-| POST | `/messages` | Post message `{server_id, message, user_id}` |
-| GET | `/connect/:userId` | SSE stream for real-time messages |
+| GET | `/users/:id/rooms` | Get rooms for user |
+| POST | `/messages` | Post message `{room_id, message, user_id}` |
+| GET | `/connect/:userId` | SSE stream — sends `historical_messages` on connect, then `new_message`, `user_joined`, `user_left` events |
 
-## Remaining Backend Work (beans tickets)
+## Remaining Work (beans tickets)
 
-The frontend degrades gracefully when these endpoints are missing (returns empty arrays). See `.beans/` for full ticket details.
+See `.beans/` for full ticket details.
 
-| Ticket | Endpoint | Notes |
-|--------|----------|-------|
-| `open_disc-w0nf` | `GET /users/:id/rooms` | `RoomService.GetRoomsForUser` exists in `postgresql/room.go` — just needs an HTTP route. Without this, room list is empty on page refresh (user must re-create rooms). |
-| `open_disc-bkid` | `GET /rooms/:id/messages` | Need `GetByRoomID` on `MessageService`. Without this, message history doesn't load when switching rooms. |
+| Ticket | Description | Notes |
+|--------|-------------|-------|
 | `open_disc-pokb` | CORS middleware | Not needed during dev (Vite proxy handles it). Needed for production when frontend is served separately. |
-| `open_disc-lv66` | Port unification | nginx/Caddy reverse proxy to serve REST + SSE on one origin. Low priority.
+| `open_disc-lv66` | Port unification | nginx/Caddy reverse proxy to serve REST + SSE on one origin. Low priority. |

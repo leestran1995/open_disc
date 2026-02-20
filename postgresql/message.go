@@ -43,7 +43,7 @@ func (s MessageService) GetMessagesByTimestamp(ctx context.Context, roomId uuid.
 
 	rows, err := s.DB.Query(ctx,
 		`select id, timestamp, room_id, message, user_id from open_discord.messages m
-			where m.server_id = $1
+			where m.room_id = $1
 			and m.timestamp < $2
 			limit 10`, roomId, timestamp)
 	if err != nil {

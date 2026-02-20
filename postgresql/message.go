@@ -19,17 +19,17 @@ func (s MessageService) Create(ctx context.Context, request opendisc.MessageCrea
 	var message opendisc.Message
 
 	err := s.DB.QueryRow(ctx,
-		`INSERT INTO open_discord.messages (server_id, message, user_id)
+		`INSERT INTO open_discord.messages (room_id, message, user_id)
 		 VALUES ($1, $2, $3)
-		 RETURNING id, message, user_id, timestamp, server_id`,
-		request.ServerID, request.Message, request.UserID,
-	).Scan(&message.ID, &message.Message, &message.UserID, &message.TimeStamp, &message.ServerID)
+		 RETURNING id, message, user_id, timestamp, room_id`,
+		request.RoomID, request.Message, request.UserID,
+	).Scan(&message.ID, &message.Message, &message.UserID, &message.TimeStamp, &message.RoomID)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.Rooms[message.ServerID].Send(message)
+	err = s.Rooms[message.RoomID].Send(message)
 
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func (s MessageService) GetMessagesByTimestamp(ctx context.Context, roomId uuid.
 	var messages []*opendisc.Message
 
 	rows, err := s.DB.Query(ctx,
-		`select id, timestamp, server_id, message, user_id from open_discord.messages m
+		`select id, timestamp, room_id, message, user_id from open_discord.messages m
 			where m.server_id = $1
 			and m.timestamp < $2
 			limit 10`, roomId, timestamp)
@@ -52,7 +52,7 @@ func (s MessageService) GetMessagesByTimestamp(ctx context.Context, roomId uuid.
 
 	for rows.Next() {
 		var message opendisc.Message
-		rows.Scan(&message.ID, &message.TimeStamp, &message.ServerID, &message.Message, &message.UserID)
+		rows.Scan(&message.ID, &message.TimeStamp, &message.RoomID, &message.Message, &message.UserID)
 		messages = append(messages, &message)
 	}
 

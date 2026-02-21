@@ -36,9 +36,9 @@ func (s *SseHandler) CreateNewSseConnection(w http.ResponseWriter, r *http.Reque
 		SendChannel: sendChannel,
 	}
 
-	userRooms, err := s.RoomService.GetRoomsForUser(context.Background(), userId)
+	rooms, err := s.RoomService.GetAllRooms(context.Background())
 
-	for _, userRoom := range userRooms {
+	for _, userRoom := range rooms {
 		roomMessages, err := s.MessageService.GetMessagesByTimestamp(context.Background(), userRoom.ID, time.Now())
 		if err != nil {
 			log.Fatalf("Unable to get messages by timestamp: %v\n", err)
@@ -62,7 +62,7 @@ func (s *SseHandler) CreateNewSseConnection(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	for _, ur := range userRooms {
+	for _, ur := range rooms {
 		matchingRoom := s.Rooms[ur.ID]
 		matchingRoom.ConnectToRoom(roomClient)
 	}
@@ -79,7 +79,7 @@ func (s *SseHandler) CreateNewSseConnection(w http.ResponseWriter, r *http.Reque
 		select {
 		case <-r.Context().Done():
 
-			for _, ur := range userRooms {
+			for _, ur := range rooms {
 				matchingRoom := s.Rooms[ur.ID]
 				matchingRoom.DisconnectFromRoom(roomClient)
 			}

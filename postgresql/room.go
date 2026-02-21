@@ -53,37 +53,6 @@ func (s RoomService) JoinRoom(ctx context.Context, request opendisc.RoomJoinRequ
 	return nil
 }
 
-func (s RoomService) GetRoomsForUser(ctx context.Context, userId uuid.UUID) ([]opendisc.Room, error) {
-	var rooms []opendisc.Room
-
-	rows, err := s.DB.Query(ctx, `select r.* from open_discord.rooms r 
-    inner join open_discord.user_room_pivot urp on r.id = urp.room_id
-         where urp.user_id = $1`, userId)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	var hasNext = rows.Next()
-	if !hasNext {
-		return rooms, nil
-	}
-
-	for hasNext {
-		var room opendisc.Room
-		err := rows.Scan(&room.ID, &room.Name)
-		if err != nil {
-			return nil, err
-		}
-		rooms = append(rooms, room)
-		hasNext = rows.Next()
-	}
-
-	return rooms, nil
-}
-
 func (s RoomService) GetAllRooms(ctx context.Context) ([]opendisc.Room, error) {
 	var rooms []opendisc.Room
 	rows, err := s.DB.Query(ctx, "select * from open_discord.rooms")

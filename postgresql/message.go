@@ -5,9 +5,10 @@ import (
 	"open_discord/logic"
 	"time"
 
+	"open_discord"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"open_discord"
 )
 
 type MessageService struct {
@@ -15,14 +16,14 @@ type MessageService struct {
 	Rooms map[uuid.UUID]*logic.Room
 }
 
-func (s MessageService) Create(ctx context.Context, request opendisc.MessageCreateRequest) (*opendisc.Message, error) {
+func (s MessageService) Create(ctx context.Context, request opendisc.MessageCreateRequest, username string) (*opendisc.Message, error) {
 	var message opendisc.Message
 
 	err := s.DB.QueryRow(ctx,
-		`INSERT INTO open_discord.messages (room_id, message, user_id)
+		`INSERT INTO open_discord.messages (room_id, message, username)
 		 VALUES ($1, $2, $3)
-		 RETURNING id, message, user_id, timestamp, room_id`,
-		request.RoomID, request.Message, request.UserID,
+		 RETURNING id, message, username, timestamp, room_id`,
+		request.RoomID, request.Message, username,
 	).Scan(&message.ID, &message.Message, &message.UserID, &message.TimeStamp, &message.RoomID)
 
 	if err != nil {

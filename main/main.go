@@ -58,7 +58,7 @@ func main() {
 
 	for _, room := range allRooms {
 		connectionRoom := logic.Room{
-			ConnectedClients: make(map[uuid.UUID]*logic.RoomClient),
+			ConnectedClients: make(map[string]*logic.RoomClient),
 			RoomID:           room.ID,
 			Name:             room.Name,
 		}

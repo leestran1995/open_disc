@@ -35,7 +35,7 @@ func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
 	}
 
 	h.Rooms[u.ID] = &logic.Room{
-		ConnectedClients: make(map[uuid.UUID]*logic.RoomClient),
+		ConnectedClients: make(map[string]*logic.RoomClient),
 		RoomID:           u.ID,
 		Name:             u.Name,
 	}

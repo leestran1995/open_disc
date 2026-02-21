@@ -43,7 +43,7 @@ func CreateHandlers(services *Services, rooms map[uuid.UUID]*logic.Room) *Handle
 			Token: &services.TokenService,
 		},
 		UserHandler: http.UserHandler{
-			UserService: services.UsersService,
+			UserService: &services.UsersService,
 		},
 		RoomHandler: http.RoomHandler{
 			RoomService: services.RoomsService,

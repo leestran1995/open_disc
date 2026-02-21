@@ -61,7 +61,7 @@ func (h *AuthHandler) HandleSignUp(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
-	c.JSON(http.StatusOK, gin.H{"data": "ok"})
+	c.JSON(http.StatusCreated, gin.H{"data": "ok"})
 }
 
 func AuthMiddleware(t *auth.TokenService) gin.HandlerFunc {

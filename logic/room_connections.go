@@ -12,7 +12,7 @@ import (
 // UserID is their unique user identifier
 // SendChannel is the channel that their SSE connection will receive messages from
 type RoomClient struct {
-	UserID      uuid.UUID
+	Username    string
 	Nickname    string
 	SendChannel chan opendisc.RoomEvent
 }
@@ -22,18 +22,18 @@ type RoomClient struct {
 // RoomID is the ID of the room as it exists in the DB
 // Name is the name of the room
 type Room struct {
-	ConnectedClients map[uuid.UUID]*RoomClient
+	ConnectedClients map[string]*RoomClient
 	RoomID           uuid.UUID
 	Name             string
 }
 
 func (r *Room) ConnectToRoom(roomClient RoomClient) {
-	fmt.Printf("Connecting user %s to room %s\n", roomClient.UserID, r.Name)
-	r.ConnectedClients[roomClient.UserID] = &roomClient
+	fmt.Printf("Connecting user %s to room %s\n", roomClient.Username, r.Name)
+	r.ConnectedClients[roomClient.Username] = &roomClient
 
 	connectedEvent := opendisc.UserEvent{
-		RoomID: r.RoomID,
-		UserID: roomClient.UserID,
+		RoomID:   r.RoomID,
+		Username: roomClient.Username,
 	}
 
 	asJson, err := json.Marshal(connectedEvent)
@@ -51,14 +51,14 @@ func (r *Room) ConnectToRoom(roomClient RoomClient) {
 }
 
 func (r *Room) DisconnectFromRoom(roomClient RoomClient) {
-	fmt.Printf("Disconnecting user %s from room %s\n", r.RoomID, roomClient.UserID)
-	delete(r.ConnectedClients, roomClient.UserID)
+	fmt.Printf("Disconnecting user %s from room %s\n", r.RoomID, roomClient.Username)
+	delete(r.ConnectedClients, roomClient.Username)
 
-	r.ConnectedClients[roomClient.UserID] = &roomClient
+	r.ConnectedClients[roomClient.Username] = &roomClient
 
 	connectedEvent := opendisc.UserEvent{
-		RoomID: r.RoomID,
-		UserID: roomClient.UserID,
+		RoomID:   r.RoomID,
+		Username: roomClient.Username,
 	}
 
 	asJson, err := json.Marshal(connectedEvent)

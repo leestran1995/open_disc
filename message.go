@@ -18,12 +18,11 @@ type Message struct {
 type MessageCreateRequest struct {
 	RoomID  uuid.UUID `json:"room_id"`
 	Message string    `json:"message"`
-	UserID  uuid.UUID `json:"user_id"`
 }
 
 type UserEvent struct {
-	RoomID uuid.UUID `json:"room_id"`
-	UserID uuid.UUID `json:"user_id"`
+	RoomID   uuid.UUID `json:"room_id"`
+	Username string    `json:"username"`
 }
 
 type RoomEventType string

@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 
+export const authToken = writable(localStorage.getItem('token'));
 export const currentUser = writable(null);
 export const rooms = writable([]);
 export const activeRoomId = writable(null);

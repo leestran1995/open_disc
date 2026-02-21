@@ -1,27 +1,55 @@
 <script>
-  import { createUser } from './api.js';
-  import { currentUser } from './stores.js';
+  import { signup, signin } from './api.js';
+  import { currentUser, authToken } from './stores.js';
   import { connectSSE } from './sse.js';
   import ThemeToggle from './ThemeToggle.svelte';
 
-  let nickname = $state('');
+  let username = $state('');
+  let password = $state('');
   let error = $state('');
+  let message = $state('');
   let loading = $state(false);
+  let mode = $state('signin');
+
+  function decodeJWT(token) {
+    try {
+      const payload = token.split('.')[1];
+      return JSON.parse(atob(payload));
+    } catch { return null; }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!nickname.trim()) return;
+    if (!username.trim() || !password) return;
 
     loading = true;
     error = '';
+    message = '';
 
-    const user = await createUser(nickname.trim());
-    if (user) {
-      localStorage.setItem('user_id', user.user_id);
-      currentUser.set(user);
-      connectSSE(user.user_id);
+    if (mode === 'signup') {
+      const result = await signup(username.trim(), password);
+      if (result) {
+        message = 'Account created! Sign in below.';
+        mode = 'signin';
+      } else {
+        error = 'Sign up failed. Username may already be taken.';
+      }
     } else {
-      error = 'Failed to create user. Is the server running?';
+      const result = await signin(username.trim(), password);
+      if (result && result.data) {
+        const token = result.data;
+        localStorage.setItem('token', token);
+        authToken.set(token);
+
+        const claims = decodeJWT(token);
+        const name = claims?.username;
+        if (name) {
+          currentUser.set({ username: name });
+          connectSSE(token, name);
+        }
+      } else {
+        error = 'Invalid username or password.';
+      }
     }
 
     loading = false;
@@ -31,23 +59,41 @@
 <div class="login-container">
   <div class="login-card">
     <h1>Open Disc</h1>
-    <p>Enter a nickname to get started</p>
+    <p>{mode === 'signin' ? 'Sign in to continue' : 'Create an account'}</p>
 
     <form onsubmit={handleSubmit}>
       <input
         type="text"
-        placeholder="Nickname"
-        bind:value={nickname}
+        placeholder="Username"
+        bind:value={username}
         disabled={loading}
       />
-      <button type="submit" disabled={loading || !nickname.trim()}>
-        {loading ? 'Joining...' : 'Join'}
+      <input
+        type="password"
+        placeholder="Password"
+        bind:value={password}
+        disabled={loading}
+      />
+      <button type="submit" disabled={loading || !username.trim() || !password}>
+        {loading ? (mode === 'signin' ? 'Signing in...' : 'Signing up...') : (mode === 'signin' ? 'Sign In' : 'Sign Up')}
       </button>
     </form>
+
+    {#if message}
+      <p class="success">{message}</p>
+    {/if}
 
     {#if error}
       <p class="error">{error}</p>
     {/if}
+
+    <p class="toggle-link">
+      {#if mode === 'signin'}
+        Don't have an account? <button class="link-btn" onclick={() => { mode = 'signup'; error = ''; message = ''; }}>Sign Up</button>
+      {:else}
+        Already have an account? <button class="link-btn" onclick={() => { mode = 'signin'; error = ''; message = ''; }}>Sign In</button>
+      {/if}
+    </p>
 
     <div class="theme-row">
       <ThemeToggle />
@@ -124,6 +170,29 @@
     margin-top: 0.75rem;
     margin-bottom: 0;
     font-size: 0.85rem;
+  }
+
+  .success {
+    color: var(--green, #859900);
+    margin-top: 0.75rem;
+    margin-bottom: 0;
+    font-size: 0.85rem;
+  }
+
+  .toggle-link {
+    margin-top: 1rem;
+    margin-bottom: 0;
+    font-size: 0.85rem;
+  }
+
+  .link-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0;
+    text-decoration: underline;
   }
 
   .theme-row {

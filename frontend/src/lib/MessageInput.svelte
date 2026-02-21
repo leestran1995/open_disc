@@ -11,11 +11,10 @@
     const user = $currentUser;
     if (!text.trim() || !roomId || !user || sending) return;
 
-    sending = true;
-    await sendMessage(roomId, text.trim(), user.user_id);
+    const msg = text.trim();
     text = '';
-    sending = false;
-    inputEl?.focus();
+    await sendMessage(roomId, msg);
+    requestAnimationFrame(() => inputEl?.focus());
   }
 
   function handleKeydown(e) {

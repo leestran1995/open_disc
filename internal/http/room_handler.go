@@ -28,6 +28,7 @@ func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	u, err := h.RoomService.Create(c.Request.Context(), request)
@@ -56,6 +57,7 @@ func (h *RoomHandler) HandleGetRoomByID(c *gin.Context) {
 	user, err := h.RoomService.GetByID(c.Request.Context(), asUuid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, user)
@@ -66,6 +68,7 @@ func (h *RoomHandler) HandleJoinRoom(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&joinRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	roomId, err := uuid.Parse(c.Param("id"))
@@ -80,11 +83,13 @@ func (h *RoomHandler) HandleSwapRoomOrder(c *gin.Context) {
 	var req opendisc.SwapRoomOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	err := h.RoomService.SwapRoomOrder(c.Request.Context(), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, nil)
@@ -95,6 +100,7 @@ func (h *RoomHandler) HandleGetAllRooms(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 	c.JSON(http.StatusOK, res)
 }

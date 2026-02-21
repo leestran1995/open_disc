@@ -3,8 +3,8 @@ package http
 import (
 	"net/http"
 	opendisc "open_discord"
-	"open_discord/logic"
-	"open_discord/postgresql"
+	"open_discord/internal/logic"
+	"open_discord/internal/postgresql"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -19,7 +19,6 @@ func BindRoomRoutes(router *gin.Engine, RoomHandler *RoomHandler) {
 	router.POST("/rooms", RoomHandler.HandleCreateRoom)
 	router.GET("/rooms/:id", RoomHandler.HandleGetRoomByID)
 	router.POST("/rooms/:id/join", RoomHandler.HandleJoinRoom)
-	router.GET("/users/:id/rooms", RoomHandler.HandleGetRoomsForUser)
 }
 
 func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
@@ -36,7 +35,7 @@ func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
 	}
 
 	h.Rooms[u.ID] = &logic.Room{
-		ConnectedClients: make(map[uuid.UUID]*logic.RoomClient),
+		ConnectedClients: make(map[string]*logic.RoomClient),
 		RoomID:           u.ID,
 		Name:             u.Name,
 	}
@@ -73,17 +72,4 @@ func (h *RoomHandler) HandleJoinRoom(c *gin.Context) {
 	}
 
 	h.RoomService.JoinRoom(c.Request.Context(), joinRequest, roomId)
-}
-
-func (h *RoomHandler) HandleGetRoomsForUser(c *gin.Context) {
-	userId, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	}
-	rows, err := h.RoomService.GetRoomsForUser(c.Request.Context(), userId)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	}
-	c.JSON(http.StatusOK, rows)
 }

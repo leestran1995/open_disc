@@ -1,10 +1,27 @@
 <script>
   import Message from './Message.svelte';
+  import { getMessages } from './api.js';
   import { messagesByRoom, activeRoomId } from './stores.js';
 
   let container;
+  const fetchedRooms = new Set();
 
   let messages = $derived($messagesByRoom[$activeRoomId] || []);
+
+  $effect(() => {
+    const roomId = $activeRoomId;
+    if (!roomId || fetchedRooms.has(roomId)) return;
+    fetchedRooms.add(roomId);
+
+    getMessages(roomId).then(result => {
+      if (result?.messages) {
+        messagesByRoom.update(current => ({
+          ...current,
+          [roomId]: result.messages.reverse()
+        }));
+      }
+    });
+  });
 
   $effect(() => {
     // Re-run when messages change

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	myHttp "open_discord/http"
-	"open_discord/logic"
-	"open_discord/postgresql"
+	http2 "open_discord/internal/http"
+	"open_discord/internal/logic"
+	"open_discord/internal/util"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -39,6 +39,7 @@ func main() {
 	}
 
 	dbURL := os.Getenv("DATABASE_URL")
+	jwtSecret := os.Getenv("JWT_SECRET")
 
 	// Create DB Pool
 	pool, err := pgxpool.New(ctx, dbURL)
@@ -47,30 +48,17 @@ func main() {
 	}
 	defer pool.Close()
 
-	// Wire up our services and handlers, this boilerplate should eventually get moved somewhere else
-	userService := postgresql.UserService{DB: pool}
-	userHandler := myHttp.UserHandler{UserService: userService}
+	services := util.CreateServices(pool, jwtSecret, &rooms)
+	handlers := util.CreateHandlers(services, &rooms)
 
-	roomService := postgresql.RoomService{DB: pool}
-	roomHandler := myHttp.RoomHandler{RoomService: roomService, Rooms: rooms}
-
-	messageService := postgresql.MessageService{DB: pool, Rooms: rooms}
-	messageHandler := myHttp.MessageHandler{MessageService: messageService}
-
-	sseHandler := myHttp.SseHandler{
-		RoomService:    &roomService,
-		Rooms:          rooms,
-		MessageService: &messageService,
-	}
-
-	allRooms, err := roomService.GetAllRooms(context.Background())
+	allRooms, err := services.RoomsService.GetAllRooms(context.Background())
 	if err != nil {
 		log.Fatalf("Unable to get all rooms: %v\n", err)
 	}
 
 	for _, room := range allRooms {
 		connectionRoom := logic.Room{
-			ConnectedClients: make(map[uuid.UUID]*logic.RoomClient),
+			ConnectedClients: make(map[string]*logic.RoomClient),
 			RoomID:           room.ID,
 			Name:             room.Name,
 		}
@@ -79,14 +67,16 @@ func main() {
 
 	// Router setup
 	router := setupRouter()
+	router.Use(http2.AuthMiddleware(&services.TokenService))
 
-	myHttp.BindUserRoutes(router, &userHandler)
-	myHttp.BindRoomRoutes(router, &roomHandler)
-	myHttp.BindMessageRoutes(router, &messageHandler)
+	http2.BindUserRoutes(router, &handlers.UserHandler)
+	http2.BindRoomRoutes(router, &handlers.RoomHandler)
+	http2.BindMessageRoutes(router, &handlers.MessagesHandler)
+	http2.BindAuthRoutes(router, &handlers.AuthHandler)
 
 	go router.Run("localhost:8080")
 
 	// Start SSE listener
-	http.HandleFunc("/connect/{userId}", sseHandler.CreateNewSseConnection)
+	http.HandleFunc("/connect/{userId}", handlers.SseHandler.CreateNewSseConnection)
 	http.ListenAndServe("localhost:8081", nil)
 }

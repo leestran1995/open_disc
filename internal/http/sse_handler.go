@@ -7,63 +7,53 @@ import (
 	"log"
 	"net/http"
 	opendisc "open_discord"
-	"open_discord/logic"
-	"open_discord/postgresql"
-	"time"
+	"open_discord/internal/auth"
+	"open_discord/internal/logic"
+	postgresql2 "open_discord/internal/postgresql"
+	"strings"
 
 	"github.com/google/uuid"
 )
 
 type SseHandler struct {
-	RoomService    *postgresql.RoomService
-	MessageService *postgresql.MessageService
-	Rooms          map[uuid.UUID]*logic.Room
+	RoomService    *postgresql2.RoomService
+	MessageService *postgresql2.MessageService
+	Rooms          *map[uuid.UUID]*logic.Room
+	TokenService   *auth.TokenService
 }
 
 func (s *SseHandler) CreateNewSseConnection(w http.ResponseWriter, r *http.Request) {
-
-	// Grab the user ID from the path, eventually this will come from an auth token header
-	userId, err := uuid.Parse(r.PathValue("userId"))
-	if err != nil {
-		log.Fatalf("Unable to parse user id: %v\n", err)
+	authHeader := r.Header.Get("Authorization")
+	startsWithBearer := strings.HasPrefix(authHeader, "Bearer ")
+	if !startsWithBearer {
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+	bearerToken := strings.TrimPrefix(authHeader, "Bearer ")
+	claims, err := s.TokenService.ValidateJWT(bearerToken)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	username := claims.Username
 
 	sendChannel := make(chan opendisc.RoomEvent, 50)
 
 	roomClient := logic.RoomClient{
-		UserID:      userId,
+		Username:    username,
 		SendChannel: sendChannel,
 	}
 
-	userRooms, err := s.RoomService.GetRoomsForUser(context.Background(), userId)
-
-	for _, userRoom := range userRooms {
-		roomMessages, err := s.MessageService.GetMessagesByTimestamp(context.Background(), userRoom.ID, time.Now())
-		if err != nil {
-			log.Fatalf("Unable to get messages by timestamp: %v\n", err)
-		}
-
-		toJson, err := json.Marshal(roomMessages)
-		if err != nil {
-			log.Fatalf("Unable to marshal room messages: %v\n", err)
-		}
-
-		roomEvent := opendisc.RoomEvent{
-			RoomEventType: opendisc.HistoricalMessages,
-			Payload:       toJson,
-		}
-
-		sendChannel <- roomEvent
-	}
+	rooms, err := s.RoomService.GetAllRooms(context.Background())
 
 	if err != nil {
 		log.Fatalf("Unable to get all rooms: %v\n", err)
 		return
 	}
 
-	for _, ur := range userRooms {
-		matchingRoom := s.Rooms[ur.ID]
+	for _, ur := range rooms {
+		matchingRoom := (*s.Rooms)[ur.ID]
 		matchingRoom.ConnectToRoom(roomClient)
 	}
 
@@ -79,8 +69,8 @@ func (s *SseHandler) CreateNewSseConnection(w http.ResponseWriter, r *http.Reque
 		select {
 		case <-r.Context().Done():
 
-			for _, ur := range userRooms {
-				matchingRoom := s.Rooms[ur.ID]
+			for _, ur := range rooms {
+				matchingRoom := (*s.Rooms)[ur.ID]
 				matchingRoom.DisconnectFromRoom(roomClient)
 			}
 

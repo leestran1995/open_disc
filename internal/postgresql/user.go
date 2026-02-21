@@ -42,12 +42,22 @@ func (u UserService) GetUserByID(ctx context.Context, userId uuid.UUID) (*opendi
 	return &user, nil
 }
 
-func (u UserService) GetUserByNickname(ctx context.Context, nickname string) (*opendisc.User, error) {
-	//TODO implement me
-	panic("implement me")
-}
+func (u UserService) GetAllUsers(ctx context.Context) ([]opendisc.User, error) {
+	var users []opendisc.User
+	rows, err := u.DB.Query(ctx, "select id, nickname, username from open_discord.users")
 
-func (u UserService) DeleteUser(ctx context.Context, userId uuid.UUID) error {
-	//TODO implement me
-	panic("implement me")
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var user opendisc.User
+		err = rows.Scan(&user.UserID, &user.Nickname, &user.Username)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return users, nil
 }

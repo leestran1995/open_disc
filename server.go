@@ -13,6 +13,5 @@ type CreateRoomRequest struct {
 }
 
 type SwapRoomOrderRequest struct {
-	RoomIDOne uuid.UUID `json:"room_id_one"`
-	RoomIDTwo uuid.UUID `json:"room_id_two"`
+	RoomIDs []uuid.UUID `json:"room_ids"`
 }

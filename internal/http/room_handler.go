@@ -86,7 +86,7 @@ func (h *RoomHandler) HandleSwapRoomOrder(c *gin.Context) {
 		return
 	}
 
-	err := h.RoomService.SwapRoomOrder(c.Request.Context(), req)
+	err := h.RoomService.ReorderRooms(c.Request.Context(), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -3,13 +3,12 @@ package postgresql
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	opendisc "open_discord"
-	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
@@ -31,9 +30,6 @@ func SetupPostgresContainer(t *testing.T) (*pgxpool.Pool, error) {
 		postgres.WithPassword(dbPass),
 		postgres.BasicWaitStrategies(),
 	)
-
-	logs, _ := postgresContainer.Logs(ctx)
-	io.Copy(os.Stdout, logs)
 
 	t.Cleanup(
 		func() {
@@ -92,7 +88,7 @@ func TestCreateAndGet(t *testing.T) {
 	assert.True(t, found)
 }
 
-func TestSwapOrder(t *testing.T) {
+func TestReorderRooms(t *testing.T) {
 	ctx := context.Background()
 	pool, err := SetupPostgresContainer(t)
 	if err != nil {
@@ -102,17 +98,21 @@ func TestSwapOrder(t *testing.T) {
 
 	first, _ := roomService.Create(ctx, opendisc.CreateRoomRequest{Name: "First Room"})
 	second, _ := roomService.Create(ctx, opendisc.CreateRoomRequest{Name: "Second Room"})
+	third, _ := roomService.Create(ctx, opendisc.CreateRoomRequest{Name: "Third Room"})
 
 	assert.Equal(t, 1, first.SortOrder)
 	assert.Equal(t, 2, second.SortOrder)
+	assert.Equal(t, 3, third.SortOrder)
 
-	roomService.SwapRoomOrder(ctx, opendisc.SwapRoomOrderRequest{
-		RoomIDOne: first.ID,
-		RoomIDTwo: second.ID,
+	roomService.ReorderRooms(ctx, opendisc.SwapRoomOrderRequest{
+		RoomIDs: []uuid.UUID{second.ID, third.ID, first.ID},
 	})
 
 	first, _ = roomService.GetByID(ctx, first.ID)
 	second, _ = roomService.GetByID(ctx, second.ID)
-	assert.Equal(t, first.SortOrder, 2)
-	assert.Equal(t, second.SortOrder, 1)
+	third, _ = roomService.GetByID(ctx, third.ID)
+
+	assert.Equal(t, 3, first.SortOrder)
+	assert.Equal(t, 1, second.SortOrder)
+	assert.Equal(t, 2, third.SortOrder)
 }

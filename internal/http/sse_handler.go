@@ -19,7 +19,7 @@ import (
 type SseHandler struct {
 	RoomService    *postgresql2.RoomService
 	MessageService *postgresql2.MessageService
-	Rooms          map[uuid.UUID]*logic.Room
+	Rooms          *map[uuid.UUID]*logic.Room
 	TokenService   *auth.TokenService
 }
 
@@ -73,7 +73,7 @@ func (s *SseHandler) CreateNewSseConnection(w http.ResponseWriter, r *http.Reque
 	}
 
 	for _, ur := range rooms {
-		matchingRoom := s.Rooms[ur.ID]
+		matchingRoom := (*s.Rooms)[ur.ID]
 		matchingRoom.ConnectToRoom(roomClient)
 	}
 
@@ -90,7 +90,7 @@ func (s *SseHandler) CreateNewSseConnection(w http.ResponseWriter, r *http.Reque
 		case <-r.Context().Done():
 
 			for _, ur := range rooms {
-				matchingRoom := s.Rooms[ur.ID]
+				matchingRoom := (*s.Rooms)[ur.ID]
 				matchingRoom.DisconnectFromRoom(roomClient)
 			}
 

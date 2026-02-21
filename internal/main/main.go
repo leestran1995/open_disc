@@ -48,8 +48,8 @@ func main() {
 	}
 	defer pool.Close()
 
-	services := util.CreateServices(pool, jwtSecret)
-	handlers := util.CreateHandlers(services, rooms)
+	services := util.CreateServices(pool, jwtSecret, &rooms)
+	handlers := util.CreateHandlers(services, &rooms)
 
 	allRooms, err := services.RoomsService.GetAllRooms(context.Background())
 	if err != nil {

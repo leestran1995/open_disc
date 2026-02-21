@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 	auth2 "open_discord/internal/auth"
 	"strings"
@@ -66,7 +65,6 @@ func (h *AuthHandler) HandleSignUp(c *gin.Context) {
 
 func AuthMiddleware(t *auth2.TokenService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		fmt.Println("Inside of auth middleware")
 		path := c.FullPath()
 
 		if path == signupRoute || path == signInRoute {

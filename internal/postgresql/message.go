@@ -2,6 +2,7 @@ package postgresql
 
 import (
 	"context"
+	"fmt"
 	"open_discord/internal/logic"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 
 type MessageService struct {
 	DB    *pgxpool.Pool
-	Rooms map[uuid.UUID]*logic.Room
+	Rooms *map[uuid.UUID]*logic.Room
 }
 
 func (s MessageService) Create(ctx context.Context, request opendisc.MessageCreateRequest, username string) (*opendisc.Message, error) {
@@ -24,13 +25,13 @@ func (s MessageService) Create(ctx context.Context, request opendisc.MessageCrea
 		 VALUES ($1, $2, $3)
 		 RETURNING id, message, username, timestamp, room_id`,
 		request.RoomID, request.Message, username,
-	).Scan(&message.ID, &message.Message, &message.UserID, &message.TimeStamp, &message.RoomID)
+	).Scan(&message.ID, &message.Message, &message.Username, &message.TimeStamp, &message.RoomID)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.Rooms[message.RoomID].Send(message)
+	err = (*s.Rooms)[message.RoomID].Send(message)
 
 	if err != nil {
 		return nil, err
@@ -42,9 +43,10 @@ func (s MessageService) Create(ctx context.Context, request opendisc.MessageCrea
 // GetMessagesByTimestamp treat timestamp like a cursor to allow for infinite scrolling
 func (s MessageService) GetMessagesByTimestamp(ctx context.Context, roomId uuid.UUID, timestamp time.Time) ([]*opendisc.Message, error) {
 	var messages []*opendisc.Message
+	fmt.Println(roomId.String(), timestamp)
 
 	rows, err := s.DB.Query(ctx,
-		`select id, timestamp, room_id, message, user_id from open_discord.messages m
+		`select id, timestamp, room_id, message, username from open_discord.messages m
 			where m.room_id = $1
 			and m.timestamp < $2
 			limit 10`, roomId, timestamp)
@@ -54,7 +56,7 @@ func (s MessageService) GetMessagesByTimestamp(ctx context.Context, roomId uuid.
 
 	for rows.Next() {
 		var message opendisc.Message
-		rows.Scan(&message.ID, &message.TimeStamp, &message.RoomID, &message.Message, &message.UserID)
+		rows.Scan(&message.ID, &message.TimeStamp, &message.RoomID, &message.Message, &message.Username)
 		messages = append(messages, &message)
 	}
 

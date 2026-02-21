@@ -1,6 +1,7 @@
 package http
 
 import (
+	"log/slog"
 	"net/http"
 	opendisc "open_discord"
 	"open_discord/internal/postgresql"
@@ -20,6 +21,7 @@ func BindMessageRoutes(router *gin.Engine, messageHandler *MessageHandler) {
 }
 
 func (h *MessageHandler) HandleCreateMessage(c *gin.Context) {
+	slog.Info("HandleCreateMessage")
 	var request opendisc.MessageCreateRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -46,12 +48,16 @@ func (h *MessageHandler) HandleGetMessages(c *gin.Context) {
 	}
 
 	timestampString := c.Query("timestamp")
-
+	var timestamp time.Time
 	if timestampString == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing timestamp"})
+		timestamp = time.Now().UTC()
+	} else {
+		timestamp, err = time.Parse(time.RFC3339Nano, timestampString)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
 	}
 
-	timestamp, err := time.Parse(time.RFC3339, timestampString)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}

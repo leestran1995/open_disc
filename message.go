@@ -12,7 +12,7 @@ type Message struct {
 	RoomID    uuid.UUID `json:"room_id"`
 	Message   string    `json:"message"`
 	TimeStamp time.Time `json:"timestamp"`
-	UserID    uuid.UUID `json:"user_id"`
+	Username  string    `json:"username"`
 }
 
 type MessageCreateRequest struct {

@@ -53,7 +53,10 @@ func (u UserService) GetAllUsers(ctx context.Context) ([]opendisc.User, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var user opendisc.User
-		rows.Scan(&user.UserID, &user.Nickname)
+		err = rows.Scan(&user.UserID, &user.Nickname, &user.Username)
+		if err != nil {
+			return nil, err
+		}
 		users = append(users, user)
 	}
 	return users, nil

@@ -1,13 +1,13 @@
 <script>
-  import { currentUser } from './stores.js';
+  import { replaceEmoji } from './emoji.js';
 
   let { message } = $props();
 
+  let displayText = $derived(() => replaceEmoji(message.message));
+
   let displayName = $derived(() => {
-    if (message.user_id === 'system') return 'system';
-    const user = $currentUser;
-    if (user && user.user_id === message.user_id) return user.nickname;
-    return message.user_id.slice(0, 8);
+    if (message.username === 'system') return 'system';
+    return message.username;
   });
 
   let time = $derived(() => {
@@ -20,7 +20,7 @@
 <div class="message">
   <span class="user">{displayName()}</span>
   <span class="time">{time()}</span>
-  <span class="text">{message.message}</span>
+  <span class="text">{displayText()}</span>
 </div>
 
 <style>

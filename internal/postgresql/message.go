@@ -49,6 +49,7 @@ func (s MessageService) GetMessagesByTimestamp(ctx context.Context, roomId uuid.
 		`select id, timestamp, room_id, message, username from open_discord.messages m
 			where m.room_id = $1
 			and m.timestamp < $2
+			order by m.timestamp desc
 			limit 10`, roomId, timestamp)
 	if err != nil {
 		return nil, err

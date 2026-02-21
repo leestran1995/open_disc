@@ -1,6 +1,7 @@
 <script>
-  import { createRoom, joinRoom } from './api.js';
-  import { rooms, activeRoomId, currentUser, messagesByRoom } from './stores.js';
+  import { createRoom } from './api.js';
+  import { authToken, rooms, activeRoomId, currentUser, messagesByRoom } from './stores.js';
+  import { get } from 'svelte/store';
   import ThemeToggle from './ThemeToggle.svelte';
   import { connectSSE, disconnectSSE } from './sse.js';
 
@@ -15,11 +16,13 @@
     creating = true;
     const room = await createRoom(newRoomName.trim());
     if (room) {
-      await joinRoom(room.id, user.user_id);
-      rooms.update((list) => [...list, room]);
+      rooms.update((list) => {
+        const updated = [...list, room];
+        localStorage.setItem('rooms', JSON.stringify(updated));
+        return updated;
+      });
       activeRoomId.set(room.id);
-      // Reconnect SSE so the backend registers this new room subscription
-      connectSSE(user.user_id);
+      connectSSE(get(authToken), user.username);
       newRoomName = '';
     }
     creating = false;
@@ -31,7 +34,10 @@
 
   function logout() {
     disconnectSSE();
-    localStorage.removeItem('user_id');
+    localStorage.removeItem('token');
+    localStorage.removeItem('rooms');
+    localStorage.removeItem('activeRoomId');
+    authToken.set(null);
     currentUser.set(null);
     rooms.set([]);
     activeRoomId.set(null);
@@ -68,7 +74,7 @@
   </form>
 
   <div class="sidebar-footer">
-    <span class="username">{$currentUser?.nickname}</span>
+    <span class="username">{$currentUser?.username}</span>
     <button class="logout" onclick={logout}>Log out</button>
   </div>
 </aside>
@@ -133,10 +139,13 @@
     gap: 0.4rem;
     padding: 0.5rem 0.75rem;
     border-top: 1px solid var(--border);
+    min-width: 0;
+    overflow: hidden;
   }
 
   .create-room input {
     flex: 1;
+    min-width: 0;
     padding: 0.4em 0.6em;
     border: 1px solid var(--border);
     border-radius: 4px;
@@ -151,6 +160,7 @@
   }
 
   .create-room button {
+    flex-shrink: 0;
     padding: 0.4em 0.7em;
     background: var(--accent);
     color: #fdf6e3;

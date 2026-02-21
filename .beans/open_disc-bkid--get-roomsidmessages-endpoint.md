@@ -14,4 +14,4 @@ parent: open_disc-533i
 
 Add GetByRoomID method to MessageService and expose as HTTP route. Returns last 50 messages for a room ordered by timestamp. Needed for message history on room switch.
 
-Implemented differently than planned: `MessageService.GetMessagesByTimestamp` was added in `postgresql/message.go` and message history is delivered via SSE `historical_messages` events on connect (last 10 per room) rather than a REST endpoint. The frontend SSE handler loads these into the `messagesByRoom` store automatically. A REST endpoint for on-demand history loading could still be added later.
+Implemented as `GET /messages/:room_id` with optional `?timestamp=` cursor for pagination. `MessageService.GetMessagesByTimestamp` in `postgresql/message.go` returns last 10 messages ordered by `timestamp DESC`. Frontend fetches via `getMessages()` in `api.js` on room select, reverses to display oldest-first. SSE no longer delivers historical messages on connect — client fetches via REST instead.

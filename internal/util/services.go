@@ -47,6 +47,7 @@ func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room) *Handl
 		},
 		RoomHandler: http2.RoomHandler{
 			RoomService: services.RoomsService,
+			Rooms:       *rooms,
 		},
 		MessagesHandler: http2.MessageHandler{
 			MessageService: services.MessagesService,

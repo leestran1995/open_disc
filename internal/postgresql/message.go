@@ -2,7 +2,7 @@ package postgresql
 
 import (
 	"context"
-	"open_discord/logic"
+	"open_discord/internal/logic"
 	"time"
 
 	"open_discord"

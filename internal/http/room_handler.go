@@ -3,8 +3,8 @@ package http
 import (
 	"net/http"
 	opendisc "open_discord"
-	"open_discord/logic"
-	"open_discord/postgresql"
+	"open_discord/internal/logic"
+	"open_discord/internal/postgresql"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

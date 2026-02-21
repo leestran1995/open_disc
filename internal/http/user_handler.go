@@ -2,7 +2,7 @@ package http
 
 import (
 	"net/http"
-	"open_discord/postgresql"
+	"open_discord/internal/postgresql"
 
 	"github.com/gin-gonic/gin"
 )

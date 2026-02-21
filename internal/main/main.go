@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	myHttp "open_discord/http"
-	"open_discord/logic"
-	"open_discord/util"
+	http2 "open_discord/internal/http"
+	"open_discord/internal/logic"
+	"open_discord/internal/util"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -67,12 +67,12 @@ func main() {
 
 	// Router setup
 	router := setupRouter()
-	router.Use(myHttp.AuthMiddleware(&services.TokenService))
+	router.Use(http2.AuthMiddleware(&services.TokenService))
 
-	myHttp.BindUserRoutes(router, &handlers.UserHandler)
-	myHttp.BindRoomRoutes(router, &handlers.RoomHandler)
-	myHttp.BindMessageRoutes(router, &handlers.MessagesHandler)
-	myHttp.BindAuthRoutes(router, &handlers.AuthHandler)
+	http2.BindUserRoutes(router, &handlers.UserHandler)
+	http2.BindRoomRoutes(router, &handlers.RoomHandler)
+	http2.BindMessageRoutes(router, &handlers.MessagesHandler)
+	http2.BindAuthRoutes(router, &handlers.AuthHandler)
 
 	go router.Run("localhost:8080")
 

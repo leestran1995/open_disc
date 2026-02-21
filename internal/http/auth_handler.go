@@ -3,15 +3,15 @@ package http
 import (
 	"fmt"
 	"net/http"
-	"open_discord/auth"
+	auth2 "open_discord/internal/auth"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 type AuthHandler struct {
-	Auth  *auth.Service
-	Token *auth.TokenService
+	Auth  *auth2.Service
+	Token *auth2.TokenService
 }
 
 type SignInRequest struct {
@@ -64,7 +64,7 @@ func (h *AuthHandler) HandleSignUp(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"data": "ok"})
 }
 
-func AuthMiddleware(t *auth.TokenService) gin.HandlerFunc {
+func AuthMiddleware(t *auth2.TokenService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		fmt.Println("Inside of auth middleware")
 		path := c.FullPath()

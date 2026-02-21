@@ -3,7 +3,7 @@ package http
 import (
 	"net/http"
 	opendisc "open_discord"
-	"open_discord/postgresql"
+	"open_discord/internal/postgresql"
 
 	"github.com/gin-gonic/gin"
 )

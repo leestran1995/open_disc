@@ -14,10 +14,15 @@ type Service struct {
 
 // Signup
 // Signs a user up, returns an error if signup failed. Sets initial nickname to be same as username
-// /*
 func (a *Service) Signup(username string, password string) error {
 	if a.UsernameExists(username) {
 		return errors.New("username exists")
+	}
+
+	err := a.ValidateUsername(username)
+
+	if err != nil {
+		return err
 	}
 
 	passwordHash, err := a.ValidateAndHashPassword(password)
@@ -35,6 +40,14 @@ func (a *Service) Signup(username string, password string) error {
 	return nil
 }
 
+// ValidateUsername TODO: Implement actual username validation
+func (a *Service) ValidateUsername(username string) error {
+	return nil
+}
+
+// UsernameExists helper function to check if a username exists already.
+// In the future, we could try and suggest a new username if it's already taken.
+// Maybe using Redis and a bloom filter.
 func (a *Service) UsernameExists(username string) bool {
 	var exists bool
 
@@ -54,6 +67,8 @@ func (a *Service) ValidateAndHashPassword(password string) (string, error) {
 	return argon2id.CreateHash(password, argon2id.DefaultParams)
 }
 
+// CheckPassword get the existing password from the DB and use its salt to hash the provided password
+// and check if they match.
 func (a *Service) CheckPassword(username, password string) (bool, error) {
 	var existingPassword string
 

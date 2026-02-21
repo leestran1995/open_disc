@@ -7,9 +7,9 @@ import (
 	"log"
 	"net/http"
 	opendisc "open_discord"
-	"open_discord/auth"
-	"open_discord/logic"
-	"open_discord/postgresql"
+	"open_discord/internal/auth"
+	"open_discord/internal/logic"
+	postgresql2 "open_discord/internal/postgresql"
 	"strings"
 	"time"
 
@@ -17,8 +17,8 @@ import (
 )
 
 type SseHandler struct {
-	RoomService    *postgresql.RoomService
-	MessageService *postgresql.MessageService
+	RoomService    *postgresql2.RoomService
+	MessageService *postgresql2.MessageService
 	Rooms          map[uuid.UUID]*logic.Room
 	TokenService   *auth.TokenService
 }

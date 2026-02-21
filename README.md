@@ -29,6 +29,7 @@ At the moment, all users in a server have access to all rooms in that server.
 
 - Refactor rooms to each be run in its own goroutine
 - Rework `message` table to be scoped to any and all `RoomEvents`
+- 
 
 ## Auth
 

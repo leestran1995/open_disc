@@ -11,7 +11,6 @@ import (
 	"open_discord/internal/logic"
 	postgresql2 "open_discord/internal/postgresql"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -47,25 +46,6 @@ func (s *SseHandler) CreateNewSseConnection(w http.ResponseWriter, r *http.Reque
 	}
 
 	rooms, err := s.RoomService.GetAllRooms(context.Background())
-
-	for _, userRoom := range rooms {
-		roomMessages, err := s.MessageService.GetMessagesByTimestamp(context.Background(), userRoom.ID, time.Now())
-		if err != nil {
-			log.Fatalf("Unable to get messages by timestamp: %v\n", err)
-		}
-
-		toJson, err := json.Marshal(roomMessages)
-		if err != nil {
-			log.Fatalf("Unable to marshal room messages: %v\n", err)
-		}
-
-		roomEvent := opendisc.RoomEvent{
-			RoomEventType: opendisc.HistoricalMessages,
-			Payload:       toJson,
-		}
-
-		sendChannel <- roomEvent
-	}
 
 	if err != nil {
 		log.Fatalf("Unable to get all rooms: %v\n", err)

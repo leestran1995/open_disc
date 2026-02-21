@@ -1,5 +1,9 @@
 <script>
+  import { replaceEmoji } from './emoji.js';
+
   let { message } = $props();
+
+  let displayText = $derived(() => replaceEmoji(message.message));
 
   let displayName = $derived(() => {
     if (message.username === 'system') return 'system';
@@ -16,7 +20,7 @@
 <div class="message">
   <span class="user">{displayName()}</span>
   <span class="time">{time()}</span>
-  <span class="text">{message.message}</span>
+  <span class="text">{displayText()}</span>
 </div>
 
 <style>

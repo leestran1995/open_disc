@@ -25,6 +25,8 @@ At the moment, all users in a server have access to all rooms in that server.
 - Data retention policies
   - Automatically clean up data older than some configured timeframe
 - Rate Limiting
+- User Presence
+  - Use Redis to display whether a user is actively connected or not
 
 ## Implementation Plans
 

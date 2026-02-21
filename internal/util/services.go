@@ -37,6 +37,8 @@ type Handlers struct {
 }
 
 func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room) *Handlers {
+	registry := logic.NewClientRegistry()
+
 	return &Handlers{
 		AuthHandler: http2.AuthHandler{
 			Auth:  &services.AuthService,
@@ -48,6 +50,7 @@ func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room) *Handl
 		RoomHandler: http2.RoomHandler{
 			RoomService: services.RoomsService,
 			Rooms:       *rooms,
+			Registry:    registry,
 		},
 		MessagesHandler: http2.MessageHandler{
 			MessageService: services.MessagesService,
@@ -57,6 +60,7 @@ func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room) *Handl
 			MessageService: &services.MessagesService,
 			Rooms:          rooms,
 			TokenService:   &services.TokenService,
+			Registry:       registry,
 		},
 	}
 }

@@ -322,6 +322,55 @@ else
 fi
 
 # ================================================================
+# 14. SSE receives new_message in a newly created room
+# ================================================================
+info "14. SSE new_message in new room -- create room while SSE connected, send message, verify SSE delivery"
+
+SSE_NEWROOM_TMPFILE=$(mktemp)
+
+# Start SSE connection in background BEFORE creating the room
+curl -s -N "$SSE_URL/connect/$TEST_USER" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Accept: text/event-stream" \
+  --max-time 6 > "$SSE_NEWROOM_TMPFILE" 2>/dev/null &
+SSE_NEWROOM_PID=$!
+
+# Give SSE connection time to establish
+sleep 1
+
+# Create a new room while SSE is connected
+NEW_ROOM_NAME="sse-test-room-$(date +%s)"
+CREATE_NR_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/rooms" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d "{\"name\":\"$NEW_ROOM_NAME\"}")
+CREATE_NR_BODY=$(echo "$CREATE_NR_RESPONSE" | sed '$d')
+NEW_ROOM_ID=$(json_val "$CREATE_NR_BODY" "id")
+
+# Send a message to the newly created room
+NEW_MSG_TEXT="SSE new room test $(date +%s)"
+curl -s -X POST "$BASE_URL/messages" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d "{\"room_id\":\"$NEW_ROOM_ID\",\"message\":\"$NEW_MSG_TEXT\"}" > /dev/null
+
+# Wait for SSE to receive the event
+sleep 2
+
+# Kill the background curl
+kill $SSE_NEWROOM_PID 2>/dev/null || true
+wait $SSE_NEWROOM_PID 2>/dev/null || true
+
+SSE_NEWROOM_OUTPUT=$(cat "$SSE_NEWROOM_TMPFILE")
+rm -f "$SSE_NEWROOM_TMPFILE"
+
+if echo "$SSE_NEWROOM_OUTPUT" | grep -q "new_message" && echo "$SSE_NEWROOM_OUTPUT" | grep -q "$NEW_MSG_TEXT"; then
+  pass "SSE delivered new_message for room created after connection"
+else
+  fail "SSE new_message in new room" "Expected new_message with '$NEW_MSG_TEXT' in SSE stream"
+fi
+
+# ================================================================
 # Summary
 # ================================================================
 echo ""

@@ -13,6 +13,7 @@ import (
 type RoomHandler struct {
 	RoomService postgresql.RoomService
 	Rooms       map[uuid.UUID]*logic.Room
+	Registry    *logic.ClientRegistry
 }
 
 func BindRoomRoutes(router *gin.Engine, RoomHandler *RoomHandler) {
@@ -34,10 +35,16 @@ func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
 		return
 	}
 
-	h.Rooms[u.ID] = &logic.Room{
+	room := &logic.Room{
 		ConnectedClients: make(map[string]*logic.RoomClient),
 		RoomID:           u.ID,
 		Name:             u.Name,
+	}
+	h.Rooms[u.ID] = room
+
+	// Connect all active SSE clients to the new room
+	for _, client := range h.Registry.GetAll() {
+		room.ConnectToRoom(*client)
 	}
 
 	c.JSON(http.StatusCreated, u)

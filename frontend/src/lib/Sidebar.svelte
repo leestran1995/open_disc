@@ -1,17 +1,15 @@
 <script>
   import { createRoom } from './api.js';
-  import { authToken, rooms, activeRoomId, currentUser, messagesByRoom } from './stores.js';
-  import { get } from 'svelte/store';
+  import { rooms, activeRoomId, currentUser, messagesByRoom, authToken } from './stores.js';
   import ThemeToggle from './ThemeToggle.svelte';
-  import { connectSSE, disconnectSSE } from './sse.js';
+  import { disconnectSSE } from './sse.js';
 
   let newRoomName = $state('');
   let creating = $state(false);
 
   async function handleCreateRoom(e) {
     e.preventDefault();
-    const user = $currentUser;
-    if (!newRoomName.trim() || !user || creating) return;
+    if (!newRoomName.trim() || !$currentUser || creating) return;
 
     creating = true;
     const room = await createRoom(newRoomName.trim());
@@ -22,7 +20,6 @@
         return updated;
       });
       activeRoomId.set(room.id);
-      connectSSE(get(authToken), user.username);
       newRoomName = '';
     }
     creating = false;

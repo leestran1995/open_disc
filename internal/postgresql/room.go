@@ -19,9 +19,9 @@ func (s RoomService) Create(ctx context.Context, request opendisc.CreateRoomRequ
 	err := s.DB.QueryRow(ctx,
 		`INSERT INTO open_discord.rooms (name)
 		 VALUES ($1)
-		 RETURNING id, name`,
+		 RETURNING id, name, sort_order`,
 		request.Name,
-	).Scan(&room.ID, &room.Name)
+	).Scan(&room.ID, &room.Name, &room.SortOrder)
 
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (s RoomService) SwapRoomOrder(ctx context.Context, req opendisc.SwapRoomOrd
 	}
 
 	// Swap rooms' sort orders
-	_, err = s.DB.Exec(ctx, `UPDATE open_discord.rooms
+	_, err = tx.Exec(ctx, `UPDATE open_discord.rooms
 								SET sort_order = CASE 
 									WHEN id = $1 THEN $3::int
 									WHEN id = $2 THEN $4::int

@@ -39,6 +39,7 @@ func (s MessageService) Create(ctx context.Context, request opendisc.MessageCrea
 	return &message, nil
 }
 
+// GetMessagesByTimestamp treat timestamp like a cursor to allow for infinite scrolling
 func (s MessageService) GetMessagesByTimestamp(ctx context.Context, roomId uuid.UUID, timestamp time.Time) ([]*opendisc.Message, error) {
 	var messages []*opendisc.Message
 

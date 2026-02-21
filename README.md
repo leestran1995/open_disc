@@ -24,6 +24,7 @@ At the moment, all users in a server have access to all rooms in that server.
 - Images uploads
 - Data retention policies
   - Automatically clean up data older than some configured timeframe
+- Rate Limiting
 
 ## Implementation Plans
 

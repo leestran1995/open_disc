@@ -18,7 +18,9 @@ type RoomHandler struct {
 func BindRoomRoutes(router *gin.Engine, RoomHandler *RoomHandler) {
 	router.POST("/rooms", RoomHandler.HandleCreateRoom)
 	router.GET("/rooms/:id", RoomHandler.HandleGetRoomByID)
+	router.GET("/rooms", RoomHandler.HandleGetAllRooms)
 	router.POST("/rooms/:id/join", RoomHandler.HandleJoinRoom)
+	router.PUT("/rooms/order", RoomHandler.HandleSwapRoomOrder)
 }
 
 func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
@@ -72,4 +74,27 @@ func (h *RoomHandler) HandleJoinRoom(c *gin.Context) {
 	}
 
 	h.RoomService.JoinRoom(c.Request.Context(), joinRequest, roomId)
+}
+
+func (h *RoomHandler) HandleSwapRoomOrder(c *gin.Context) {
+	var req opendisc.SwapRoomOrderRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	err := h.RoomService.SwapRoomOrder(c.Request.Context(), req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	c.JSON(http.StatusOK, nil)
+}
+
+func (h *RoomHandler) HandleGetAllRooms(c *gin.Context) {
+	res, err := h.RoomService.GetAllRooms(c)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+	c.JSON(http.StatusOK, res)
 }

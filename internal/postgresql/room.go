@@ -34,7 +34,7 @@ func (s RoomService) GetByID(ctx context.Context, serverId uuid.UUID) (*opendisc
 	var room opendisc.Room
 	row := s.DB.QueryRow(ctx, "select * from open_discord.rooms where id = $1", serverId)
 
-	err := row.Scan(&room.ID, &room.Name)
+	err := row.Scan(&room.ID, &room.Name, &room.SortOrder)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (s RoomService) JoinRoom(ctx context.Context, request opendisc.RoomJoinRequ
 
 func (s RoomService) GetAllRooms(ctx context.Context) ([]opendisc.Room, error) {
 	var rooms []opendisc.Room
-	rows, err := s.DB.Query(ctx, "select * from open_discord.rooms")
+	rows, err := s.DB.Query(ctx, "select * from open_discord.rooms order by sort_order desc")
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (s RoomService) GetAllRooms(ctx context.Context) ([]opendisc.Room, error) {
 
 	for hasNext {
 		var room opendisc.Room
-		err := rows.Scan(&room.ID, &room.Name)
+		err := rows.Scan(&room.ID, &room.Name, &room.SortOrder)
 		if err != nil {
 			return nil, err
 		}
@@ -77,4 +77,35 @@ func (s RoomService) GetAllRooms(ctx context.Context) ([]opendisc.Room, error) {
 	}
 
 	return rooms, nil
+}
+
+func (s RoomService) SwapRoomOrder(ctx context.Context, req opendisc.SwapRoomOrderRequest) error {
+	tx, err := s.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	firstRoom, err := s.GetByID(ctx, req.RoomIDOne)
+	if err != nil {
+		return err
+	}
+
+	secondRoom, err := s.GetByID(ctx, req.RoomIDTwo)
+	if err != nil {
+		return err
+	}
+
+	// Swap rooms' sort orders
+	_, err = s.DB.Exec(ctx, `UPDATE open_discord.rooms
+								SET sort_order = CASE 
+									WHEN id = $1 THEN $3::int
+									WHEN id = $2 THEN $4::int
+								END
+								WHERE id in ($1, $2)`, firstRoom.ID, secondRoom.ID, secondRoom.SortOrder, firstRoom.SortOrder)
+
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }

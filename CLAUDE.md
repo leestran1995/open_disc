@@ -96,13 +96,14 @@ Open http://localhost:4000. The Vite dev server (hardcoded to port 4000 via `str
 | `lib/api.js` | Auth-aware REST client with JWT Bearer token. Signup, signin, room CRUD, message send/fetch via `/api/*` |
 | `lib/sse.js` | Fetch-based SSE client with JWT auth — connects via `/sse/connect/:username`, unwraps `RoomEvent` envelope, handles `new_message`, `user_joined`, `user_left`. Discovers rooms via `user_joined` events. |
 | `lib/jwt.js` | Shared JWT decode helper (base64 payload extraction, no verification) |
+| `lib/emoji.js` | `:shortcode:` to unicode emoji replacement (`replaceEmoji`) + prefix search for autocomplete (`searchEmoji`). Uses `gemoji` package. |
 | `lib/theme.js` | Dark/light toggle with `localStorage` persistence, auto-detects system preference |
 | `lib/Login.svelte` | Username/password auth form with signup + signin modes |
 | `lib/Sidebar.svelte` | Room list, create room, logout clears JWT token |
 | `lib/RoomHeader.svelte` | Displays `# room-name` for active room |
-| `lib/MessageList.svelte` | Renders messages from store, fetches messages via REST on room select, auto-scrolls |
-| `lib/MessageInput.svelte` | Text input, sends on Enter (no user_id in payload) |
-| `lib/Message.svelte` | Single message row: username, timestamp, text |
+| `lib/MessageList.svelte` | Renders messages from store, fetches messages via REST on room select (reverses DESC results), auto-scrolls |
+| `lib/MessageInput.svelte` | Text input with emoji autocomplete popup (`:` + 2 chars triggers suggestions, arrow keys/Tab/Enter to select). Inline shortcode replacement on type. Sends on Enter. |
+| `lib/Message.svelte` | Single message row: username, timestamp, text. Renders `:shortcode:` emoji via `$derived`. |
 | `lib/ThemeToggle.svelte` | Dark/light mode button |
 
 **Svelte 5 patterns used:** `$state`, `$derived`, `$effect`, `$props()` for component-local state. `writable` stores from `svelte/store` for cross-component shared state. `onMount` for initial data fetching.

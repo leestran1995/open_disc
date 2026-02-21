@@ -22,15 +22,15 @@
 
     if (mode === 'signup') {
       const result = await signup(username.trim(), password);
-      if (result) {
+      if (result && !result._error) {
         message = 'Account created! Sign in below.';
         mode = 'signin';
       } else {
-        error = 'Sign up failed. Username may already be taken.';
+        error = result?._error || 'Sign up failed.';
       }
     } else {
       const result = await signin(username.trim(), password);
-      if (result && result.data) {
+      if (result && !result._error && result.data) {
         const token = result.data;
         localStorage.setItem('token', token);
         authToken.set(token);
@@ -42,7 +42,7 @@
           connectSSE(token, name);
         }
       } else {
-        error = 'Invalid username or password.';
+        error = result?._error || 'Invalid username or password.';
       }
     }
 

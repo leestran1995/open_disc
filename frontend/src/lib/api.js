@@ -14,7 +14,14 @@ async function request(path, options = {}) {
       headers,
       ...options,
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      try {
+        const body = await res.json();
+        return { _error: body.error || `Request failed (${res.status})` };
+      } catch {
+        return { _error: `Request failed (${res.status})` };
+      }
+    }
     return await res.json();
   } catch {
     return null;

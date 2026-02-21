@@ -95,7 +95,8 @@ Open http://localhost:4000. The Vite dev server (hardcoded to port 4000 via `str
 | `lib/stores.js` | Shared writable stores: `currentUser`, `rooms`, `activeRoomId`, `messagesByRoom`, `authToken` |
 | `lib/api.js` | Auth-aware REST client with JWT Bearer token. Signup, signin, room CRUD, message send/fetch via `/api/*` |
 | `lib/sse.js` | Fetch-based SSE client with JWT auth — connects via `/sse/connect/:username`, unwraps `RoomEvent` envelope, handles `new_message`, `user_joined`, `user_left`. Discovers rooms via `user_joined` events. |
-| `lib/theme.js` | Dark/light toggle with `localStorage` persistence |
+| `lib/jwt.js` | Shared JWT decode helper (base64 payload extraction, no verification) |
+| `lib/theme.js` | Dark/light toggle with `localStorage` persistence, auto-detects system preference |
 | `lib/Login.svelte` | Username/password auth form with signup + signin modes |
 | `lib/Sidebar.svelte` | Room list, create room, logout clears JWT token |
 | `lib/RoomHeader.svelte` | Displays `# room-name` for active room |
@@ -117,7 +118,7 @@ Open http://localhost:4000. The Vite dev server (hardcoded to port 4000 via `str
 7. Frontend `sse.js` unwraps the envelope, dispatches by event type, deduplicates by message `id`, and updates the `messagesByRoom` store
 8. Disconnection removes the client from all room maps; client reconnects with exponential backoff
 
-**In-memory state** (`logic/room_connections.go`): `rooms map[UUID]*Room` where each `Room` holds a map of connected `RoomClient`s, each with a `SendChannel chan RoomEvent` (buffered, capacity 50). New rooms are registered in this map at startup (from DB) and on create (via `RoomHandler`).
+**In-memory state** (`internal/logic/room_connections.go`): `rooms map[UUID]*Room` where each `Room` holds a map of connected `RoomClient`s, each with a `SendChannel chan RoomEvent` (buffered, capacity 50). New rooms are registered in this map at startup (from DB) and on create (via `RoomHandler`).
 
 ## API Endpoints
 

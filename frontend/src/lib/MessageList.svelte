@@ -4,14 +4,14 @@
   import { messagesByRoom, activeRoomId } from './stores.js';
 
   let container;
+  const fetchedRooms = new Set();
 
   let messages = $derived($messagesByRoom[$activeRoomId] || []);
 
   $effect(() => {
     const roomId = $activeRoomId;
-    if (!roomId) return;
-    const existing = $messagesByRoom[roomId];
-    if (existing && existing.length > 0) return;
+    if (!roomId || fetchedRooms.has(roomId)) return;
+    fetchedRooms.add(roomId);
 
     getMessages(roomId).then(result => {
       if (result?.messages) {

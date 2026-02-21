@@ -3,13 +3,11 @@
   import { currentUser, activeRoomId } from './stores.js';
 
   let text = $state('');
-  let sending = $state(false);
   let inputEl;
 
   async function handleSend() {
     const roomId = $activeRoomId;
-    const user = $currentUser;
-    if (!text.trim() || !roomId || !user || sending) return;
+    if (!text.trim() || !roomId || !$currentUser) return;
 
     const msg = text.trim();
     text = '';
@@ -33,9 +31,8 @@
       bind:this={inputEl}
       bind:value={text}
       onkeydown={handleKeydown}
-      disabled={sending}
     />
-    <button onclick={handleSend} disabled={sending || !text.trim()}>
+    <button onclick={handleSend} disabled={!text.trim()}>
       Send
     </button>
   </div>

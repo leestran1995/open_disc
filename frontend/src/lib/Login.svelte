@@ -2,6 +2,7 @@
   import { signup, signin } from './api.js';
   import { currentUser, authToken } from './stores.js';
   import { connectSSE } from './sse.js';
+  import { decodeJWT } from './jwt.js';
   import ThemeToggle from './ThemeToggle.svelte';
 
   let username = $state('');
@@ -10,13 +11,6 @@
   let message = $state('');
   let loading = $state(false);
   let mode = $state('signin');
-
-  function decodeJWT(token) {
-    try {
-      const payload = token.split('.')[1];
-      return JSON.parse(atob(payload));
-    } catch { return null; }
-  }
 
   async function handleSubmit(e) {
     e.preventDefault();

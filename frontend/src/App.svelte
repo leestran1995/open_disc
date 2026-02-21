@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { currentUser, authToken, rooms, activeRoomId } from './lib/stores.js';
   import { connectSSE } from './lib/sse.js';
+  import { decodeJWT } from './lib/jwt.js';
   import Login from './lib/Login.svelte';
   import Sidebar from './lib/Sidebar.svelte';
   import RoomHeader from './lib/RoomHeader.svelte';
@@ -9,13 +10,6 @@
   import MessageInput from './lib/MessageInput.svelte';
 
   let ready = $state(false);
-
-  function decodeJWT(token) {
-    try {
-      const payload = token.split('.')[1];
-      return JSON.parse(atob(payload));
-    } catch { return null; }
-  }
 
   onMount(() => {
     const token = localStorage.getItem('token');

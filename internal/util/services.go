@@ -36,7 +36,7 @@ type Handlers struct {
 	SseHandler      http2.SseHandler
 }
 
-func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room) *Handlers {
+func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room, clientRegistry *logic.ClientRegistry) *Handlers {
 	return &Handlers{
 		AuthHandler: http2.AuthHandler{
 			Auth:  &services.AuthService,
@@ -46,8 +46,9 @@ func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room) *Handl
 			UserService: &services.UsersService,
 		},
 		RoomHandler: http2.RoomHandler{
-			RoomService: services.RoomsService,
-			Rooms:       *rooms,
+			RoomService:    services.RoomsService,
+			Rooms:          *rooms,
+			ClientRegistry: clientRegistry,
 		},
 		MessagesHandler: http2.MessageHandler{
 			MessageService: services.MessagesService,
@@ -57,6 +58,7 @@ func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room) *Handl
 			MessageService: &services.MessagesService,
 			Rooms:          rooms,
 			TokenService:   &services.TokenService,
+			ClientRegistry: clientRegistry,
 		},
 	}
 }

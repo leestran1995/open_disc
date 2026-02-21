@@ -25,11 +25,16 @@ func setupRouter() *gin.Engine {
 }
 
 var rooms map[uuid.UUID]*logic.Room
+var clients map[string]*logic.RoomClient
 
 func main() {
 	fmt.Println("Starting application")
 
 	rooms = make(map[uuid.UUID]*logic.Room)
+	clients = make(map[string]*logic.RoomClient)
+
+	clientRegistry := logic.ClientRegistry{Clients: &clients}
+
 	ctx := context.Background()
 
 	// Load configs into our env
@@ -49,7 +54,7 @@ func main() {
 	defer pool.Close()
 
 	services := util.CreateServices(pool, jwtSecret, &rooms)
-	handlers := util.CreateHandlers(services, &rooms)
+	handlers := util.CreateHandlers(services, &rooms, &clientRegistry)
 
 	allRooms, err := services.RoomsService.GetAllRooms(context.Background())
 	if err != nil {
@@ -58,9 +63,9 @@ func main() {
 
 	for _, room := range allRooms {
 		connectionRoom := logic.Room{
-			ConnectedClients: make(map[string]*logic.RoomClient),
-			RoomID:           room.ID,
-			Name:             room.Name,
+			ClientRegistry: &clientRegistry,
+			RoomID:         room.ID,
+			Name:           room.Name,
 		}
 		rooms[room.ID] = &connectionRoom
 	}
@@ -77,6 +82,6 @@ func main() {
 	go router.Run("localhost:8080")
 
 	// Start SSE listener
-	http.HandleFunc("/connect/{userId}", handlers.SseHandler.CreateNewSseConnection)
+	http.HandleFunc("/connect", handlers.SseHandler.CreateNewSseConnection)
 	http.ListenAndServe("localhost:8081", nil)
 }

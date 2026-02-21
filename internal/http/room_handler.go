@@ -11,8 +11,9 @@ import (
 )
 
 type RoomHandler struct {
-	RoomService postgresql.RoomService
-	Rooms       map[uuid.UUID]*logic.Room
+	RoomService    postgresql.RoomService
+	Rooms          map[uuid.UUID]*logic.Room
+	ClientRegistry *logic.ClientRegistry
 }
 
 func BindRoomRoutes(router *gin.Engine, RoomHandler *RoomHandler) {
@@ -38,9 +39,9 @@ func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
 	}
 
 	h.Rooms[u.ID] = &logic.Room{
-		ConnectedClients: make(map[string]*logic.RoomClient),
-		RoomID:           u.ID,
-		Name:             u.Name,
+		ClientRegistry: h.ClientRegistry,
+		RoomID:         u.ID,
+		Name:           u.Name,
 	}
 
 	c.JSON(http.StatusCreated, u)

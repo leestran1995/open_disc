@@ -1,10 +1,8 @@
 package http
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	opendisc "open_discord"
 	"open_discord/internal/auth"
@@ -20,9 +18,12 @@ type SseHandler struct {
 	MessageService *postgresql2.MessageService
 	Rooms          *map[uuid.UUID]*logic.Room
 	TokenService   *auth.TokenService
+	ClientRegistry *logic.ClientRegistry
 }
 
 func (s *SseHandler) CreateNewSseConnection(w http.ResponseWriter, r *http.Request) {
+
+	// Auth checks
 	authHeader := r.Header.Get("Authorization")
 	startsWithBearer := strings.HasPrefix(authHeader, "Bearer ")
 	if !startsWithBearer {
@@ -45,17 +46,7 @@ func (s *SseHandler) CreateNewSseConnection(w http.ResponseWriter, r *http.Reque
 		SendChannel: sendChannel,
 	}
 
-	rooms, err := s.RoomService.GetAllRooms(context.Background())
-
-	if err != nil {
-		log.Fatalf("Unable to get all rooms: %v\n", err)
-		return
-	}
-
-	for _, ur := range rooms {
-		matchingRoom := (*s.Rooms)[ur.ID]
-		matchingRoom.ConnectToRoom(roomClient)
-	}
+	s.ClientRegistry.Connect(&roomClient)
 
 	// Set CORS headers to allow all origins. You may want to restrict this to specific origins in a production environment.
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -68,12 +59,7 @@ func (s *SseHandler) CreateNewSseConnection(w http.ResponseWriter, r *http.Reque
 	for {
 		select {
 		case <-r.Context().Done():
-
-			for _, ur := range rooms {
-				matchingRoom := (*s.Rooms)[ur.ID]
-				matchingRoom.DisconnectFromRoom(roomClient)
-			}
-
+			s.ClientRegistry.Disconnect(roomClient)
 			return
 
 		case message := <-sendChannel:

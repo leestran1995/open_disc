@@ -6,6 +6,12 @@
   let text = $state('');
   let inputEl;
 
+  $effect(() => {
+    if ($activeRoomId) {
+      requestAnimationFrame(() => inputEl?.focus());
+    }
+  });
+
   let suggestions = $state([]);
   let selectedIndex = $state(0);
   let colonStart = $state(-1);

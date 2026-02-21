@@ -8,8 +8,10 @@
   import RoomHeader from './lib/RoomHeader.svelte';
   import MessageList from './lib/MessageList.svelte';
   import MessageInput from './lib/MessageInput.svelte';
+  import RoomSwitcher from './lib/RoomSwitcher.svelte';
 
   let ready = $state(false);
+  let showSwitcher = $state(false);
 
   onMount(() => {
     const token = localStorage.getItem('token');
@@ -49,6 +51,15 @@
   });
 </script>
 
+<svelte:window
+  onkeydown={(e) => {
+    if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 't')) {
+      e.preventDefault();
+      if ($currentUser) showSwitcher = !showSwitcher;
+    }
+  }}
+/>
+
 {#if !ready}
   <div class="loading">Loading...</div>
 {:else if $currentUser}
@@ -59,6 +70,7 @@
       <MessageList />
       <MessageInput />
     </main>
+    <RoomSwitcher open={showSwitcher} onclose={() => showSwitcher = false} />
   </div>
 {:else}
   <Login />

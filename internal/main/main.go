@@ -53,7 +53,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	services := util.CreateServices(pool, jwtSecret, &rooms)
+	services := util.CreateServices(pool, jwtSecret, &rooms, &clientRegistry)
 	handlers := util.CreateHandlers(services, &rooms, &clientRegistry)
 
 	// Add all existing rooms to memory

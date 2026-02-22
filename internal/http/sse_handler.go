@@ -38,9 +38,11 @@ func (s *SseHandler) HandleGinSseConnection(c *gin.Context) {
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
 
+	slog.Info("Established connection with " + username + ", waiting on messages to send them.")
+
 	for {
 		select {
-		case <-c.Done():
+		case <-c.Request.Context().Done():
 			slog.Info("Closed client connection to ", username)
 			s.ClientRegistry.Disconnect(roomClient)
 			return

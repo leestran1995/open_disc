@@ -11,3 +11,7 @@ func (c *ClientRegistry) Connect(rc *RoomClient) {
 func (c *ClientRegistry) Disconnect(rc RoomClient) {
 	delete(*c.Clients, rc.Username)
 }
+
+func (c *ClientRegistry) IsOnline(username string) bool {
+	return (*c.Clients)[username] != nil
+}

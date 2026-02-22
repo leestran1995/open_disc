@@ -85,6 +85,7 @@
       });
       activeRoomId.set(room.id);
       connectSSE(get(authToken), user.username);
+      updateRoomOrder(get(rooms).map((r) => r.id));
       newRoomName = '';
     }
     creating = false;

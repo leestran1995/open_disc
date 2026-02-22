@@ -12,6 +12,13 @@ At the moment, all users in a server have access to all rooms in that server.
 
 ## Feature plans
 
+- Immediate next thing:
+  - Rescope messages -> ServerEvents
+  - Messages, users connecting/disconnecting, rooms being created, etc. are all ServerEvents
+  - ServerEvents are all stored on a single table with an auto-incrementing column
+  - Clients will use that auto-inc column for two purposes
+    - To know if they missed any events
+    - To know where the last event they received was, to re-sync with the server
 - ~~Room Ordering~~
 - Username color customization
 - Room Categories
@@ -21,6 +28,7 @@ At the moment, all users in a server have access to all rooms in that server.
 - User roles
   - Only users with certain roles can see certain channels
   - Only users with certain roles can create new channels
+  - If a user does not have the role, they will receive ServerEvents with a type of [REDACTED] to maintain the auto-inc sequence
 - Threads
   - Slack-style
 - VOIP

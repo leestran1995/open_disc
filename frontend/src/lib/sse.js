@@ -111,7 +111,7 @@ export function connectSSE(token, username) {
 function startConnection(token, username) {
   abortController = new AbortController();
 
-  fetch(`/sse/connect/${username}`, {
+  fetch(`/sse/connect`, {
     headers: { Authorization: `Bearer ${token}` },
     signal: abortController.signal,
   })

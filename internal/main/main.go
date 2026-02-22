@@ -79,10 +79,9 @@ func main() {
 	http2.BindRoomRoutes(router, &handlers.RoomHandler)
 	http2.BindMessageRoutes(router, &handlers.MessagesHandler)
 	http2.BindAuthRoutes(router, &handlers.AuthHandler)
-
-	go router.Run("localhost:8080")
-
-	// Start SSE listener
-	http.HandleFunc("/connect", handlers.SseHandler.CreateNewSseConnection)
-	http.ListenAndServe("localhost:8081", nil)
+	router.GET(
+		"/connect",
+		handlers.SseHandler.HandleGinSseConnection,
+	)
+	router.Run("localhost:8080")
 }

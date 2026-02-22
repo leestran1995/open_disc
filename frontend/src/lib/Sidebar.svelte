@@ -1,5 +1,5 @@
 <script>
-  import { createRoom } from './api.js';
+  import { createRoom, updateRoomOrder } from './api.js';
   import { authToken, rooms, activeRoomId, currentUser, messagesByRoom } from './stores.js';
   import { get } from 'svelte/store';
   import ThemeToggle from './ThemeToggle.svelte';
@@ -7,6 +7,68 @@
 
   let newRoomName = $state('');
   let creating = $state(false);
+
+  let draggedRoomId = $state(null);
+  let dropTargetIndex = $state(null);
+
+  function handleDragStart(e, room) {
+    draggedRoomId = room.id;
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  function handleDragOver(e, index) {
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    dropTargetIndex = e.clientY < midY ? index : index + 1;
+  }
+
+  function handleDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      dropTargetIndex = null;
+    }
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    if (draggedRoomId == null || dropTargetIndex == null) return;
+
+    const currentRooms = get(rooms);
+    const dragIndex = currentRooms.findIndex((r) => r.id === draggedRoomId);
+    if (dragIndex === -1) return;
+
+    // Dropping at same position or adjacent (no-op)
+    if (dropTargetIndex === dragIndex || dropTargetIndex === dragIndex + 1) {
+      draggedRoomId = null;
+      dropTargetIndex = null;
+      return;
+    }
+
+    const snapshot = [...currentRooms];
+    const reordered = [...currentRooms];
+    const [moved] = reordered.splice(dragIndex, 1);
+    const insertAt = dropTargetIndex > dragIndex ? dropTargetIndex - 1 : dropTargetIndex;
+    reordered.splice(insertAt, 0, moved);
+
+    // Optimistic update
+    rooms.set(reordered);
+    localStorage.setItem('rooms', JSON.stringify(reordered));
+
+    draggedRoomId = null;
+    dropTargetIndex = null;
+
+    updateRoomOrder(reordered.map((r) => r.id)).then((result) => {
+      if (result && result._error) {
+        rooms.set(snapshot);
+        localStorage.setItem('rooms', JSON.stringify(snapshot));
+      }
+    });
+  }
+
+  function handleDragEnd() {
+    draggedRoomId = null;
+    dropTargetIndex = null;
+  }
 
   async function handleCreateRoom(e) {
     e.preventDefault();
@@ -51,16 +113,28 @@
     <ThemeToggle />
   </div>
 
-  <div class="room-list">
-    {#each $rooms as room (room.id)}
+  <div class="room-list" ondragleave={handleDragLeave}>
+    {#each $rooms as room, index (room.id)}
+      {#if dropTargetIndex === index && draggedRoomId !== room.id}
+        <div class="drop-indicator"></div>
+      {/if}
       <button
         class="room-item"
         class:active={$activeRoomId === room.id}
+        class:dragging={draggedRoomId === room.id}
+        draggable="true"
+        ondragstart={(e) => handleDragStart(e, room)}
+        ondragover={(e) => handleDragOver(e, index)}
+        ondrop={handleDrop}
+        ondragend={handleDragEnd}
         onclick={() => selectRoom(room.id)}
       >
         # {room.name}
       </button>
     {/each}
+    {#if dropTargetIndex === $rooms.length}
+      <div class="drop-indicator"></div>
+    {/if}
   </div>
 
   <form class="create-room" onsubmit={handleCreateRoom}>
@@ -122,6 +196,18 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    cursor: grab;
+  }
+
+  .room-item.dragging {
+    opacity: 0.3;
+  }
+
+  .drop-indicator {
+    height: 2px;
+    background: var(--accent);
+    margin: 0 0.75rem;
+    border-radius: 1px;
   }
 
   .room-item:hover {

@@ -59,7 +59,7 @@ refresh tokens.
 
 ## A Note on AI Usage
 
-The frontend was coded entirely by hand by me, https://github.com/leestran1995. That being said, GoLand's
+The backend was coded entirely by hand by me, https://github.com/leestran1995. That being said, GoLand's
 autocomplete is really good, so a lot of the `if err != nil { return err }` checks were just tabbed through, but I'll
 be dead in a ditch before I cheat on a portfolio project.
 

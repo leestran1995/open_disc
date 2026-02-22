@@ -64,3 +64,14 @@ export function sendMessage(roomId, message) {
     body: JSON.stringify({ room_id: roomId, message }),
   });
 }
+
+export function getRooms() {
+  return request('/rooms');
+}
+
+export function updateRoomOrder(roomIds) {
+  return request('/rooms/order', {
+    method: 'PUT',
+    body: JSON.stringify({ room_ids: roomIds }),
+  });
+}

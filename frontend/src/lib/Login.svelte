@@ -1,6 +1,6 @@
 <script>
-  import { signup, signin } from './api.js';
-  import { currentUser, authToken } from './stores.js';
+  import { signup, signin, getRooms } from './api.js';
+  import { currentUser, authToken, rooms } from './stores.js';
   import { connectSSE } from './sse.js';
   import { decodeJWT } from './jwt.js';
   import ThemeToggle from './ThemeToggle.svelte';
@@ -40,6 +40,13 @@
         if (name) {
           currentUser.set({ username: name });
           connectSSE(token, name);
+
+          getRooms().then((result) => {
+            if (Array.isArray(result)) {
+              rooms.set(result);
+              localStorage.setItem('rooms', JSON.stringify(result));
+            }
+          });
         }
       } else {
         error = result?._error || 'Invalid username or password.';

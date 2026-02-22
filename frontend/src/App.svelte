@@ -3,6 +3,7 @@
   import { currentUser, authToken, rooms, activeRoomId } from './lib/stores.js';
   import { connectSSE } from './lib/sse.js';
   import { decodeJWT } from './lib/jwt.js';
+  import { getRooms } from './lib/api.js';
   import Login from './lib/Login.svelte';
   import Sidebar from './lib/Sidebar.svelte';
   import RoomHeader from './lib/RoomHeader.svelte';
@@ -33,6 +34,13 @@
         }
 
         connectSSE(token, username);
+
+        getRooms().then((result) => {
+          if (Array.isArray(result)) {
+            rooms.set(result);
+            localStorage.setItem('rooms', JSON.stringify(result));
+          }
+        });
       } else {
         localStorage.removeItem('token');
       }

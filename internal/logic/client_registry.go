@@ -8,10 +8,23 @@ type ClientRegistry struct {
 
 func (c *ClientRegistry) Connect(rc *RoomClient) {
 	(*c.Clients)[rc.Username] = rc
+	connectEvent := opendisc.RoomEvent{
+		RoomEventType: opendisc.UserJoined,
+		Payload:       rc.Username,
+	}
+
+	c.FanOutMessage(connectEvent)
 }
 
 func (c *ClientRegistry) Disconnect(rc RoomClient) {
 	delete(*c.Clients, rc.Username)
+
+	disconnectEvent := opendisc.RoomEvent{
+		RoomEventType: opendisc.UserLeft,
+		Payload:       rc.Username,
+	}
+
+	c.FanOutMessage(disconnectEvent)
 }
 
 func (c *ClientRegistry) IsOnline(username string) bool {

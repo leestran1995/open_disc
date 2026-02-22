@@ -27,10 +27,11 @@ type UserEvent struct {
 type RoomEventType string
 
 const (
-	NewMessage         RoomEventType = "new_message"
-	UserJoined         RoomEventType = "user_joined"
-	UserLeft           RoomEventType = "user_left"
-	HistoricalMessages RoomEventType = "historical_messages"
+	NewMessage  RoomEventType = "new_message"
+	UserJoined  RoomEventType = "user_joined"
+	UserLeft    RoomEventType = "user_left"
+	RoomCreated RoomEventType = "room_created"
+	RoomDeleted RoomEventType = "room_deleted"
 )
 
 type RoomEvent struct {

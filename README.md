@@ -13,6 +13,7 @@ At the moment, all users in a server have access to all rooms in that server.
 ## Feature plans
 
 - ~~Room Ordering~~
+- Username color customization
 - Room Categories
 - Configurable nicknames
 - Server commands

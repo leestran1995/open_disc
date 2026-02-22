@@ -56,6 +56,7 @@ func main() {
 	services := util.CreateServices(pool, jwtSecret, &rooms)
 	handlers := util.CreateHandlers(services, &rooms, &clientRegistry)
 
+	// Add all existing rooms to memory
 	allRooms, err := services.RoomsService.GetAllRooms(context.Background())
 	if err != nil {
 		log.Fatalf("Unable to get all rooms: %v\n", err)

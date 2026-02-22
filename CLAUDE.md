@@ -94,7 +94,7 @@ Open http://localhost:4000. The Vite dev server (hardcoded to port 4000 via `str
 | `App.svelte` | Root layout, login gate, JWT-based session restore from localStorage |
 | `lib/stores.js` | Shared writable stores: `currentUser`, `rooms`, `activeRoomId`, `messagesByRoom`, `authToken` |
 | `lib/api.js` | Auth-aware REST client with JWT Bearer token. Signup, signin, room CRUD, message send/fetch via `/api/*` |
-| `lib/sse.js` | Fetch-based SSE client with JWT auth — connects via `/sse/connect/:username`, unwraps `RoomEvent` envelope, handles `new_message`, `user_joined`, `user_left`. Discovers rooms via `user_joined` events. |
+| `lib/sse.js` | Fetch-based SSE client with JWT auth — connects via `/sse/connect` (username from JWT), unwraps `RoomEvent` envelope, handles `new_message`, `user_joined`, `user_left`. Discovers rooms via `user_joined` events. |
 | `lib/jwt.js` | Shared JWT decode helper (base64 payload extraction, no verification) |
 | `lib/emoji.js` | `:shortcode:` to unicode emoji replacement (`replaceEmoji`) + prefix search for autocomplete (`searchEmoji`). Uses `gemoji` package. |
 | `lib/theme.js` | Dark/light toggle with `localStorage` persistence, auto-detects system preference |
@@ -110,7 +110,7 @@ Open http://localhost:4000. The Vite dev server (hardcoded to port 4000 via `str
 
 **Real-time messaging flow:**
 
-1. Client connects to `GET /connect/:username` with `Authorization: Bearer <token>` header (SSE endpoint on port 8081)
+1. Client connects to `GET /connect` with `Authorization: Bearer <token>` header (SSE endpoint on port 8081, username extracted from JWT)
 2. Backend validates JWT, extracts username, connects client to all rooms, sends `user_joined` events for each room
 3. Frontend uses fetch-based SSE (not EventSource) to support Authorization header
 4. Client discovers rooms via `user_joined` events, fetches messages per room via `GET /messages/:room_id`
@@ -133,7 +133,7 @@ Open http://localhost:4000. The Vite dev server (hardcoded to port 4000 via `str
 | POST | `/rooms/:id/join` | Yes | Join room `{user_id}` |
 | POST | `/messages` | Yes | Post message `{room_id, message}` (username from JWT) |
 | GET | `/messages/:room_id` | Yes | Get messages, optional `?timestamp=` for pagination |
-| GET | `/connect/:username` | Yes | SSE stream (port 8081) — sends `user_joined`, `user_left`, `new_message` events |
+| GET | `/connect` | Yes | SSE stream (port 8081, username from JWT) — sends `user_joined`, `user_left`, `new_message` events |
 
 ## Remaining Work (beans tickets)
 

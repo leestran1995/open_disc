@@ -1,7 +1,6 @@
 package opendisc
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -35,6 +34,6 @@ const (
 )
 
 type RoomEvent struct {
-	RoomEventType RoomEventType   `json:"room_event_type"`
-	Payload       json.RawMessage `json:"payload"`
+	RoomEventType RoomEventType `json:"room_event_type"`
+	Payload       any           `json:"payload"`
 }

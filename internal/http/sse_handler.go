@@ -48,7 +48,7 @@ func (s *SseHandler) HandleGinSseConnection(c *gin.Context) {
 			return
 
 		case message := <-sendChannel:
-			c.SSEvent(string(message.RoomEventType), message)
+			c.SSEvent(string(message.RoomEventType), message.Payload)
 			c.Writer.Flush()
 		}
 	}

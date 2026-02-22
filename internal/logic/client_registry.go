@@ -1,5 +1,7 @@
 package logic
 
+import opendisc "open_discord"
+
 type ClientRegistry struct {
 	Clients *map[string]*RoomClient
 }
@@ -14,4 +16,10 @@ func (c *ClientRegistry) Disconnect(rc RoomClient) {
 
 func (c *ClientRegistry) IsOnline(username string) bool {
 	return (*c.Clients)[username] != nil
+}
+
+func (c *ClientRegistry) FanOutMessage(message opendisc.RoomEvent) {
+	for _, rc := range *c.Clients {
+		rc.SendChannel <- message
+	}
 }

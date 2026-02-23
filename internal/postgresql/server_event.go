@@ -2,6 +2,7 @@ package postgresql
 
 import (
 	"context"
+	"encoding/json"
 	"open_discord/internal/logic"
 
 	"open_discord"
@@ -16,14 +17,18 @@ type ServerEventStore struct {
 
 func (s ServerEventStore) Create(ctx context.Context, eventType opendisc.ServerEventType, payload any) (*opendisc.ServerEvent, error) {
 	var serverEvent opendisc.ServerEvent
+	var payloadBytes []byte
+	var payloadJson json.RawMessage
 
 	err := s.DB.QueryRow(ctx,
 		`INSERT INTO open_discord.server_events (event_type, payload)
 		 VALUES ($1, $2)
 		 RETURNING id, event_type, payload, timestamp, event_order`,
 		string(eventType), payload,
-	).Scan(&serverEvent.ServerEventID, &serverEvent.ServerEventType, &serverEvent.Payload, &serverEvent.ServerEventTime, &serverEvent.Payload)
+	).Scan(&serverEvent.ServerEventID, &serverEvent.ServerEventType, &payloadBytes, &serverEvent.ServerEventTime, &serverEvent.ServerEventOrder)
 
+	err = json.Unmarshal(payloadBytes, &payloadJson)
+	serverEvent.Payload = payloadJson
 	if err != nil {
 		return nil, err
 	}

@@ -48,7 +48,11 @@ func (s *SseHandler) HandleGinSseConnection(c *gin.Context) {
 			return
 
 		case message := <-sendChannel:
-			c.SSEvent(string(message.ServerEventType), message.Payload)
+			if message.ServerEventOrder == 0 {
+				c.SSEvent(string(message.ServerEventType), message.Payload)
+			} else {
+				c.SSEvent(string(message.ServerEventType), message)
+			}
 			c.Writer.Flush()
 		}
 	}

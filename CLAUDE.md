@@ -65,13 +65,12 @@ go run ./internal/main/main.go
 cd frontend && bun run dev
 ```
 
-Open http://localhost:4000. The Vite dev server (hardcoded to port 4000 via `strictPort`) proxies `/api/*` to the Go REST server (8080) and `/sse/*` to the SSE server (8081), so no CORS config is needed during dev.
+Open http://localhost:4000. The Vite dev server (hardcoded to port 4000 via `strictPort`) proxies `/api/*` and `/sse/*` to the Go server (8080), so no CORS config is needed during dev.
 
 ## Architecture
 
-**Two HTTP servers on startup:**
-- Port **8080** — Gin router for REST API
-- Port **8081** — Standard Go HTTP server for SSE (Server-Sent Events)
+**Single HTTP server on startup:**
+- Port **8080** — Gin router for REST API + SSE (Server-Sent Events)
 
 **Backend layer structure:**
 
@@ -94,7 +93,7 @@ Open http://localhost:4000. The Vite dev server (hardcoded to port 4000 via `str
 | `App.svelte` | Root layout, login gate, JWT-based session restore from localStorage |
 | `lib/stores.js` | Shared writable stores: `currentUser`, `rooms`, `activeRoomId`, `messagesByRoom`, `authToken` |
 | `lib/api.js` | Auth-aware REST client with JWT Bearer token. Signup, signin, room CRUD, message send/fetch via `/api/*` |
-| `lib/sse.js` | Fetch-based SSE client with JWT auth — connects via `/sse/connect` (username from JWT), unwraps `RoomEvent` envelope, handles `new_message`, `user_joined`, `user_left`. Discovers rooms via `user_joined` events. |
+| `lib/sse.js` | Fetch-based SSE client with JWT auth — connects via `/sse/connect` (username from JWT), parses Gin `c.SSEvent()` format (`event:` + `data:` lines), handles `new_message`, `user_joined`, `user_left`, `room_created`. |
 | `lib/jwt.js` | Shared JWT decode helper (base64 payload extraction, no verification) |
 | `lib/emoji.js` | `:shortcode:` to unicode emoji replacement (`replaceEmoji`) + prefix search for autocomplete (`searchEmoji`). Uses `gemoji` package. |
 | `lib/theme.js` | Dark/light toggle with `localStorage` persistence, auto-detects system preference |
@@ -110,16 +109,18 @@ Open http://localhost:4000. The Vite dev server (hardcoded to port 4000 via `str
 
 **Real-time messaging flow:**
 
-1. Client connects to `GET /connect` with `Authorization: Bearer <token>` header (SSE endpoint on port 8081, username extracted from JWT)
-2. Backend validates JWT, extracts username, connects client to all rooms, sends `user_joined` events for each room
+1. Client connects to `GET /connect` with `Authorization: Bearer <token>` header (SSE on main Gin router, port 8080, username extracted from JWT)
+2. Backend validates JWT, extracts username, registers client, sends server-scoped `user_joined` event (username string) to all connected clients
 3. Frontend uses fetch-based SSE (not EventSource) to support Authorization header
-4. Client discovers rooms via `user_joined` events, fetches messages per room via `GET /messages/:room_id`
-5. When `POST /messages` is called, the message is saved to DB (username from JWT) and fanned out to all connected clients in that room as a `RoomEvent` with type `new_message`
-6. All SSE events use the `RoomEvent` envelope: `{ "room_event_type": "...", "payload": <JSON> }`
-7. Frontend `sse.js` unwraps the envelope, dispatches by event type, deduplicates by message `id`, and updates the `messagesByRoom` store
-8. Disconnection removes the client from all room maps; client reconnects with exponential backoff
+4. Client fetches rooms via `GET /rooms` REST call on connect, fetches messages per room via `GET /messages/:room_id`
+5. When `POST /messages` is called, the message is saved to DB (username from JWT) and fanned out to all connected clients as SSE `new_message` event
+6. SSE uses Gin's native `c.SSEvent()` format: `event: <type>\ndata: <payload>\n\n`. Struct payloads (messages) are JSON-encoded; string payloads (usernames, room names) are plain text
+7. Frontend `sse.js` parses `event:` and `data:` lines, dispatches by event type, deduplicates messages by `id`, and updates stores
+8. `user_joined` and `user_left` are server-scoped events (payload is a username string), not room-scoped. Currently no-ops in the frontend
+9. `room_created` event triggers a REST refetch of the room list to update the sidebar
+10. Disconnection removes the client from the registry; client reconnects with exponential backoff
 
-**In-memory state** (`internal/logic/room_connections.go`): `rooms map[UUID]*Room` where each `Room` holds a map of connected `RoomClient`s, each with a `SendChannel chan RoomEvent` (buffered, capacity 50). New rooms are registered in this map at startup (from DB) and on create (via `RoomHandler`).
+**In-memory state** (`internal/logic/room_connections.go`): `rooms map[UUID]*Room` where each `Room` holds a map of connected `RoomClient`s, each with a `SendChannel chan RoomEvent` (buffered, capacity 50). New rooms are registered in this map at startup (from DB) and on create (via `RoomHandler`). Client registry is keyed by username (one SSE connection per user).
 
 ## API Endpoints
 
@@ -133,7 +134,7 @@ Open http://localhost:4000. The Vite dev server (hardcoded to port 4000 via `str
 | POST | `/rooms/:id/join` | Yes | Join room `{user_id}` |
 | POST | `/messages` | Yes | Post message `{room_id, message}` (username from JWT) |
 | GET | `/messages/:room_id` | Yes | Get messages, optional `?timestamp=` for pagination |
-| GET | `/connect` | Yes | SSE stream (port 8081, username from JWT) — sends `user_joined`, `user_left`, `new_message` events |
+| GET | `/connect` | Yes | SSE stream (port 8080, username from JWT) — sends `user_joined`, `user_left`, `new_message`, `room_created` events |
 
 ## Remaining Work (beans tickets)
 

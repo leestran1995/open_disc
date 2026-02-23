@@ -1,14 +1,12 @@
-import { get } from 'svelte/store';
 import { messagesByRoom, rooms } from './stores.js';
-import { getRoom } from './api.js';
+import { getRooms } from './api.js';
 
 let abortController = null;
 const seenIds = new Set();
 let reconnectTimeout = null;
 let reconnectDelay = 1000;
 
-function handleNewMessage(rawPayload) {
-  const msg = JSON.parse(rawPayload);
+function handleNewMessage(msg) {
   if (!msg || !msg.room_id) return;
 
   if (msg.id) {
@@ -22,32 +20,34 @@ function handleNewMessage(rawPayload) {
   });
 }
 
-async function handleUserJoined(payload) {
-  if (!payload || !payload.room_id) return;
-
-  const currentRooms = get(rooms);
-  if (currentRooms.some((r) => r.id === payload.room_id)) return;
-
-  const room = await getRoom(payload.room_id);
-  if (!room) return;
-
-  rooms.update((current) => {
-    if (current.some((r) => r.id === room.id)) return current;
-    const updated = [...current, room];
-    localStorage.setItem('rooms', JSON.stringify(updated));
-    return updated;
-  });
+async function handleRoomCreated(_roomName) {
+  const allRooms = await getRooms();
+  if (Array.isArray(allRooms)) {
+    rooms.set(allRooms);
+    localStorage.setItem('rooms', JSON.stringify(allRooms));
+  }
 }
 
-function handleEvent(eventType, eventPayload) {
+function handleEvent(eventType, rawData) {
+  let parsed;
+  try {
+    parsed = JSON.parse(rawData);
+  } catch {
+    parsed = rawData;
+  }
+
   switch (eventType) {
     case 'new_message':
-      handleNewMessage(eventPayload);
+      handleNewMessage(parsed);
       break;
     case 'user_joined':
-      handleUserJoined(parsed);
+      // Server-scoped event (username string), not room-scoped
       break;
     case 'user_left':
+      // Server-scoped event (username string), not room-scoped
+      break;
+    case 'room_created':
+      handleRoomCreated(parsed);
       break;
   }
 }
@@ -59,13 +59,16 @@ function processChunk(buffer) {
   for (const event of events) {
     const lines = event.split('\n');
     let data = '';
-    const eventType = lines[0].slice(lines[0].indexOf(":")+1);
-    const eventPayload = lines[1].slice(lines[1].indexOf(":")+1);
-    try {
-      handleEvent(eventType, eventPayload);
-    } catch {
-      // skip malformed events
+    let eventType = '';
+    for (const line of lines) {
+      if (line.startsWith('data:')) {
+        data += line.slice(line.charAt(5) === ' ' ? 6 : 5);
+      } else if (line.startsWith('event:')) {
+        eventType = line.slice(line.charAt(6) === ' ' ? 7 : 6);
+      }
     }
+    if (!data || !eventType) continue;
+    handleEvent(eventType, data);
   }
 
   return remainder;
@@ -117,8 +120,6 @@ function startConnection(token, username) {
       scheduleReconnect();
     })
     .catch((err) => {
-      console.log("handling error");
-      console.log(err);
       if (err.name === 'AbortError') return;
       scheduleReconnect();
     });

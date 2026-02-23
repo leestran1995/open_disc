@@ -24,6 +24,9 @@ cd frontend && bun install && bun run dev
 
 # Build frontend for production
 cd frontend && bun run build  # outputs to frontend/dist/
+
+# Type-check frontend (svelte-check)
+cd frontend && bun run check
 ```
 
 ## Environment Setup
@@ -88,15 +91,16 @@ Open http://localhost:4000. The Vite dev server (hardcoded to port 4000 via `str
 
 | File | Responsibility |
 |------|----------------|
-| `main.js` | Svelte 5 `mount()` entry point |
+| `main.ts` | Svelte 5 `mount()` entry point |
 | `app.css` | Solarized light/dark CSS custom properties |
 | `App.svelte` | Root layout, login gate, JWT-based session restore from localStorage |
-| `lib/stores.js` | Shared writable stores: `currentUser`, `rooms`, `activeRoomId`, `messagesByRoom`, `authToken` |
-| `lib/api.js` | Auth-aware REST client with JWT Bearer token. Signup, signin, room CRUD, message send/fetch via `/api/*` |
-| `lib/sse.js` | Fetch-based SSE client with JWT auth — connects via `/sse/connect` (username from JWT), parses Gin `c.SSEvent()` format (`event:` + `data:` lines), handles `new_message`, `user_joined`, `user_left`, `room_created`. |
-| `lib/jwt.js` | Shared JWT decode helper (base64 payload extraction, no verification) |
-| `lib/emoji.js` | `:shortcode:` to unicode emoji replacement (`replaceEmoji`) + prefix search for autocomplete (`searchEmoji`). Uses `gemoji` package. |
-| `lib/theme.js` | Dark/light toggle with `localStorage` persistence, auto-detects system preference |
+| `lib/types.ts` | Shared domain types (`Room`, `Message`, `User`, `JWTClaims`), API response/request types, `ApiResult<T>` discriminated union |
+| `lib/stores.ts` | Typed writable stores: `currentUser`, `rooms`, `activeRoomId`, `messagesByRoom`, `authToken` |
+| `lib/api.ts` | Auth-aware REST client with JWT Bearer token. Generic `request<T>()` returning `ApiResult<T>`. Signup, signin, room CRUD, message send/fetch via `/api/*` |
+| `lib/sse.ts` | Fetch-based SSE client with JWT auth — connects via `/sse/connect` (username from JWT), parses Gin `c.SSEvent()` format (`event:` + `data:` lines), handles `new_message`, `user_joined`, `user_left`, `room_created`. |
+| `lib/jwt.ts` | Shared JWT decode helper (base64 payload extraction, no verification), returns `JWTClaims \| null` |
+| `lib/emoji.ts` | `:shortcode:` to unicode emoji replacement (`replaceEmoji`) + prefix search for autocomplete (`searchEmoji`). Uses `gemoji` package. |
+| `lib/theme.ts` | Dark/light toggle with `localStorage` persistence, auto-detects system preference |
 | `lib/Login.svelte` | Username/password auth form with signup + signin modes |
 | `lib/Sidebar.svelte` | Room list, create room, logout clears JWT token |
 | `lib/RoomHeader.svelte` | Displays `# room-name` for active room |
@@ -105,7 +109,7 @@ Open http://localhost:4000. The Vite dev server (hardcoded to port 4000 via `str
 | `lib/Message.svelte` | Single message row: username, timestamp, text. Renders `:shortcode:` emoji via `$derived`. |
 | `lib/ThemeToggle.svelte` | Dark/light mode button |
 
-**Svelte 5 patterns used:** `$state`, `$derived`, `$effect`, `$props()` for component-local state. `writable` stores from `svelte/store` for cross-component shared state. `onMount` for initial data fetching.
+**Svelte 5 patterns used:** `$state`, `$derived`, `$effect`, `$props()` for component-local state. `writable` stores from `svelte/store` for cross-component shared state. `onMount` for initial data fetching. **TypeScript:** strict mode enabled, `$props()` typed via `interface Props`, `ApiResult<T>` narrowed with `'_error' in result`.
 
 **Real-time messaging flow:**
 
@@ -115,7 +119,7 @@ Open http://localhost:4000. The Vite dev server (hardcoded to port 4000 via `str
 4. Client fetches rooms via `GET /rooms` REST call on connect, fetches messages per room via `GET /messages/:room_id`
 5. When `POST /messages` is called, the message is saved to DB (username from JWT) and fanned out to all connected clients as SSE `new_message` event
 6. SSE uses Gin's native `c.SSEvent()` format: `event: <type>\ndata: <payload>\n\n`. Struct payloads (messages) are JSON-encoded; string payloads (usernames, room names) are plain text
-7. Frontend `sse.js` parses `event:` and `data:` lines, dispatches by event type, deduplicates messages by `id`, and updates stores
+7. Frontend `sse.ts` parses `event:` and `data:` lines, dispatches by event type, deduplicates messages by `id`, and updates stores
 8. `user_joined` and `user_left` are server-scoped events (payload is a username string), not room-scoped. Currently no-ops in the frontend
 9. `room_created` event triggers a REST refetch of the room list to update the sidebar
 10. Disconnection removes the client from the registry; client reconnects with exponential backoff

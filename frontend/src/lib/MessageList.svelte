@@ -1,12 +1,12 @@
-<script>
+<script lang="ts">
   import Message from './Message.svelte';
-  import { getMessages } from './api.js';
-  import { messagesByRoom, activeRoomId } from './stores.js';
+  import { getMessages } from './api';
+  import { messagesByRoom, activeRoomId } from './stores';
 
-  let container;
-  const fetchedRooms = new Set();
+  let container: HTMLDivElement;
+  const fetchedRooms = new Set<string>();
 
-  let messages = $derived($messagesByRoom[$activeRoomId] || []);
+  let messages = $derived($messagesByRoom[$activeRoomId ?? ''] || []);
 
   $effect(() => {
     const roomId = $activeRoomId;
@@ -14,7 +14,7 @@
     fetchedRooms.add(roomId);
 
     getMessages(roomId).then(result => {
-      if (result?.messages) {
+      if (result && 'messages' in result) {
         messagesByRoom.update(current => ({
           ...current,
           [roomId]: result.messages.reverse()

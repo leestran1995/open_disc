@@ -1,18 +1,19 @@
-<script>
-  import { signup, signin, getRooms } from './api.js';
-  import { currentUser, authToken, rooms } from './stores.js';
-  import { connectSSE } from './sse.js';
-  import { decodeJWT } from './jwt.js';
+<script lang="ts">
+  import { signup, signin, getRooms } from './api';
+  import { currentUser, authToken, rooms } from './stores';
+  import { connectSSE } from './sse';
+  import { decodeJWT } from './jwt';
   import ThemeToggle from './ThemeToggle.svelte';
+  import type { Room } from './types';
 
   let username = $state('');
   let password = $state('');
   let error = $state('');
   let message = $state('');
   let loading = $state(false);
-  let mode = $state('signin');
+  let mode: 'signin' | 'signup' = $state('signin');
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: SubmitEvent): Promise<void> {
     e.preventDefault();
     if (!username.trim() || !password) return;
 
@@ -22,15 +23,15 @@
 
     if (mode === 'signup') {
       const result = await signup(username.trim(), password);
-      if (result && !result._error) {
+      if (result && !('_error' in result)) {
         message = 'Account created! Sign in below.';
         mode = 'signin';
       } else {
-        error = result?._error || 'Sign up failed.';
+        error = result && '_error' in result ? result._error : 'Sign up failed.';
       }
     } else {
       const result = await signin(username.trim(), password);
-      if (result && !result._error && result.data) {
+      if (result && !('_error' in result) && result.data) {
         const token = result.data;
         localStorage.setItem('token', token);
         authToken.set(token);
@@ -41,15 +42,15 @@
           currentUser.set({ username: name });
           connectSSE(token, name);
 
-          getRooms().then((result) => {
-            if (Array.isArray(result)) {
-              rooms.set(result);
-              localStorage.setItem('rooms', JSON.stringify(result));
+          getRooms().then((roomResult) => {
+            if (Array.isArray(roomResult)) {
+              rooms.set(roomResult as Room[]);
+              localStorage.setItem('rooms', JSON.stringify(roomResult));
             }
           });
         }
       } else {
-        error = result?._error || 'Invalid username or password.';
+        error = result && '_error' in result ? result._error : 'Invalid username or password.';
       }
     }
 

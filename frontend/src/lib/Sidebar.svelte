@@ -1,35 +1,36 @@
-<script>
-  import { createRoom, updateRoomOrder } from './api.js';
-  import { authToken, rooms, activeRoomId, currentUser, messagesByRoom } from './stores.js';
+<script lang="ts">
+  import { createRoom, updateRoomOrder } from './api';
+  import { authToken, rooms, activeRoomId, currentUser, messagesByRoom } from './stores';
   import { get } from 'svelte/store';
   import ThemeToggle from './ThemeToggle.svelte';
-  import { connectSSE, disconnectSSE } from './sse.js';
+  import { connectSSE, disconnectSSE } from './sse';
+  import type { Room } from './types';
 
   let newRoomName = $state('');
   let creating = $state(false);
 
-  let draggedRoomId = $state(null);
-  let dropTargetIndex = $state(null);
+  let draggedRoomId: string | null = $state(null);
+  let dropTargetIndex: number | null = $state(null);
 
-  function handleDragStart(e, room) {
+  function handleDragStart(e: DragEvent, room: Room): void {
     draggedRoomId = room.id;
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer!.effectAllowed = 'move';
   }
 
-  function handleDragOver(e, index) {
+  function handleDragOver(e: DragEvent, index: number): void {
     e.preventDefault();
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const midY = rect.top + rect.height / 2;
     dropTargetIndex = e.clientY < midY ? index : index + 1;
   }
 
-  function handleDragLeave(e) {
-    if (!e.currentTarget.contains(e.relatedTarget)) {
+  function handleDragLeave(e: DragEvent): void {
+    if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) {
       dropTargetIndex = null;
     }
   }
 
-  function handleDrop(e) {
+  function handleDrop(e: DragEvent): void {
     e.preventDefault();
     if (draggedRoomId == null || dropTargetIndex == null) return;
 
@@ -58,44 +59,44 @@
     dropTargetIndex = null;
 
     updateRoomOrder(reordered.map((r) => r.id)).then((result) => {
-      if (result && result._error) {
+      if (result && '_error' in result) {
         rooms.set(snapshot);
         localStorage.setItem('rooms', JSON.stringify(snapshot));
       }
     });
   }
 
-  function handleDragEnd() {
+  function handleDragEnd(): void {
     draggedRoomId = null;
     dropTargetIndex = null;
   }
 
-  async function handleCreateRoom(e) {
+  async function handleCreateRoom(e: SubmitEvent): Promise<void> {
     e.preventDefault();
     const user = $currentUser;
     if (!newRoomName.trim() || !user || creating) return;
 
     creating = true;
     const room = await createRoom(newRoomName.trim());
-    if (room) {
+    if (room && !('_error' in room)) {
       rooms.update((list) => {
         const updated = [...list, room];
         localStorage.setItem('rooms', JSON.stringify(updated));
         return updated;
       });
       activeRoomId.set(room.id);
-      connectSSE(get(authToken), user.username);
+      connectSSE(get(authToken)!, user.username);
       updateRoomOrder(get(rooms).map((r) => r.id));
       newRoomName = '';
     }
     creating = false;
   }
 
-  function selectRoom(roomId) {
+  function selectRoom(roomId: string): void {
     activeRoomId.set(roomId);
   }
 
-  function logout() {
+  function logout(): void {
     disconnectSSE();
     localStorage.removeItem('token');
     localStorage.removeItem('rooms');

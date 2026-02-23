@@ -1,5 +1,5 @@
-<script>
-  import { rooms, activeRoomId } from './stores.js';
+<script lang="ts">
+  import { rooms, activeRoomId } from './stores';
 
   let roomName = $derived(() => {
     const id = $activeRoomId;

@@ -1,5 +1,5 @@
-<script>
-  import { theme, toggleTheme } from './theme.js';
+<script lang="ts">
+  import { theme, toggleTheme } from './theme';
 </script>
 
 <button class="theme-toggle" onclick={toggleTheme}>

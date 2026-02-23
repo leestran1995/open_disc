@@ -44,6 +44,14 @@ func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
 		Name:           u.Name,
 	}
 
+	roomCreatedEvent := opendisc.RoomEvent{
+		RoomEventType: opendisc.RoomCreated,
+		Payload:       u.Name,
+	}
+
+	// This should be in the service layer, alas
+	h.ClientRegistry.FanOutMessage(roomCreatedEvent)
+
 	c.JSON(http.StatusCreated, u)
 }
 

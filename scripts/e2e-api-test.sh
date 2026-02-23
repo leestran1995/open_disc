@@ -8,7 +8,7 @@
 set -euo pipefail
 
 BASE_URL="http://localhost:8080"
-SSE_URL="http://localhost:8081"
+SSE_URL="http://localhost:8080"
 
 # --- Helpers ---
 

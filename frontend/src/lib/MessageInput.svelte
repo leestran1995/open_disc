@@ -1,10 +1,11 @@
-<script>
-  import { sendMessage } from './api.js';
-  import { currentUser, activeRoomId } from './stores.js';
-  import { replaceEmoji, searchEmoji } from './emoji.js';
+<script lang="ts">
+  import { sendMessage } from './api';
+  import { currentUser, activeRoomId } from './stores';
+  import { replaceEmoji, searchEmoji } from './emoji';
+  import type { EmojiSuggestion } from './types';
 
   let text = $state('');
-  let inputEl;
+  let inputEl: HTMLInputElement;
 
   $effect(() => {
     if ($activeRoomId) {
@@ -12,21 +13,21 @@
     }
   });
 
-  let suggestions = $state([]);
+  let suggestions: EmojiSuggestion[] = $state([]);
   let selectedIndex = $state(0);
   let colonStart = $state(-1);
 
-  function getPartialShortcode() {
+  function getPartialShortcode(): { query: string; start: number } | null {
     const el = inputEl;
     if (!el) return null;
-    const pos = el.selectionStart;
+    const pos = el.selectionStart ?? 0;
     const before = text.slice(0, pos);
     const match = before.match(/:([a-zA-Z0-9_+-]*)$/);
     if (!match) return null;
     return { query: match[1], start: pos - match[0].length };
   }
 
-  function updateSuggestions() {
+  function updateSuggestions(): void {
     const partial = getPartialShortcode();
     if (partial && partial.query.length >= 2) {
       colonStart = partial.start;
@@ -38,10 +39,10 @@
     }
   }
 
-  function applySuggestion(name) {
+  function applySuggestion(name: string): void {
     const el = inputEl;
     if (!el || colonStart < 0) return;
-    const pos = el.selectionStart;
+    const pos = el.selectionStart ?? 0;
     const before = text.slice(0, colonStart);
     const after = text.slice(pos);
     const replaced = replaceEmoji(`:${name}:`);
@@ -55,10 +56,10 @@
     });
   }
 
-  function handleInput() {
+  function handleInput(): void {
     const el = inputEl;
     if (!el) return;
-    const pos = el.selectionStart;
+    const pos = el.selectionStart ?? 0;
     const replaced = replaceEmoji(text);
     if (replaced !== text) {
       const diff = text.length - replaced.length;
@@ -71,7 +72,7 @@
     }
   }
 
-  async function handleSend() {
+  async function handleSend(): Promise<void> {
     const roomId = $activeRoomId;
     if (!text.trim() || !roomId || !$currentUser) return;
 
@@ -83,7 +84,7 @@
     requestAnimationFrame(() => inputEl?.focus());
   }
 
-  function handleKeydown(e) {
+  function handleKeydown(e: KeyboardEvent): void {
     if (suggestions.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();

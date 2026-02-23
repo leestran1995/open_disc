@@ -1,14 +1,15 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
-  import { currentUser, authToken, rooms, activeRoomId } from './lib/stores.js';
-  import { connectSSE } from './lib/sse.js';
-  import { decodeJWT } from './lib/jwt.js';
-  import { getRooms } from './lib/api.js';
+  import { currentUser, authToken, rooms, activeRoomId } from './lib/stores';
+  import { connectSSE } from './lib/sse';
+  import { decodeJWT } from './lib/jwt';
+  import { getRooms } from './lib/api';
   import Login from './lib/Login.svelte';
   import Sidebar from './lib/Sidebar.svelte';
   import RoomHeader from './lib/RoomHeader.svelte';
   import MessageList from './lib/MessageList.svelte';
   import MessageInput from './lib/MessageInput.svelte';
+  import type { Room } from './lib/types';
 
   let ready = $state(false);
 
@@ -24,7 +25,7 @@
         const storedRooms = localStorage.getItem('rooms');
         if (storedRooms) {
           try {
-            rooms.set(JSON.parse(storedRooms));
+            rooms.set(JSON.parse(storedRooms) as Room[]);
           } catch { /* ignore bad data */ }
         }
 
@@ -37,7 +38,7 @@
 
         getRooms().then((result) => {
           if (Array.isArray(result)) {
-            rooms.set(result);
+            rooms.set(result as Room[]);
             localStorage.setItem('rooms', JSON.stringify(result));
           }
         });

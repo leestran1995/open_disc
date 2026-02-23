@@ -1,7 +1,12 @@
-<script>
-  import { replaceEmoji } from './emoji.js';
+<script lang="ts">
+  import { replaceEmoji } from './emoji';
+  import type { Message } from './types';
 
-  let { message } = $props();
+  interface Props {
+    message: Message;
+  }
+
+  let { message }: Props = $props();
 
   let displayText = $derived(() => replaceEmoji(message.message));
 

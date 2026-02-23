@@ -2,6 +2,7 @@ package postgresql
 
 import (
 	"context"
+	"open_discord/internal/logic"
 
 	"open_discord"
 
@@ -10,7 +11,8 @@ import (
 )
 
 type UserService struct {
-	DB *pgxpool.Pool
+	DB             *pgxpool.Pool
+	ClientRegistry *logic.ClientRegistry
 }
 
 func (u UserService) CreateUser(ctx context.Context, request opendisc.CreateUserRequest) (*opendisc.User, error) {
@@ -56,6 +58,11 @@ func (u UserService) GetAllUsers(ctx context.Context) ([]opendisc.User, error) {
 		err = rows.Scan(&user.UserID, &user.Nickname, &user.Username)
 		if err != nil {
 			return nil, err
+		}
+		if u.ClientRegistry.IsOnline(user.Username) {
+			user.IsOnline = true
+		} else {
+			user.IsOnline = false
 		}
 		users = append(users, user)
 	}

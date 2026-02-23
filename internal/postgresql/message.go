@@ -13,8 +13,8 @@ import (
 )
 
 type MessageService struct {
-	DB    *pgxpool.Pool
-	Rooms *map[uuid.UUID]*logic.Room
+	DB             *pgxpool.Pool
+	ClientRegistry *logic.ClientRegistry
 }
 
 func (s MessageService) Create(ctx context.Context, request opendisc.MessageCreateRequest, username string) (*opendisc.Message, error) {
@@ -31,11 +31,11 @@ func (s MessageService) Create(ctx context.Context, request opendisc.MessageCrea
 		return nil, err
 	}
 
-	err = (*s.Rooms)[message.RoomID].Send(message)
-
-	if err != nil {
-		return nil, err
+	roomEvent := opendisc.RoomEvent{
+		RoomEventType: opendisc.NewMessage,
+		Payload:       message,
 	}
+	s.ClientRegistry.FanOutMessage(roomEvent)
 
 	return &message, nil
 }

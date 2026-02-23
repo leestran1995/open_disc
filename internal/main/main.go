@@ -53,9 +53,10 @@ func main() {
 	}
 	defer pool.Close()
 
-	services := util.CreateServices(pool, jwtSecret, &rooms)
+	services := util.CreateServices(pool, jwtSecret, &rooms, &clientRegistry)
 	handlers := util.CreateHandlers(services, &rooms, &clientRegistry)
 
+	// Add all existing rooms to memory
 	allRooms, err := services.RoomsService.GetAllRooms(context.Background())
 	if err != nil {
 		log.Fatalf("Unable to get all rooms: %v\n", err)
@@ -78,10 +79,9 @@ func main() {
 	http2.BindRoomRoutes(router, &handlers.RoomHandler)
 	http2.BindMessageRoutes(router, &handlers.MessagesHandler)
 	http2.BindAuthRoutes(router, &handlers.AuthHandler)
-
-	go router.Run("localhost:8080")
-
-	// Start SSE listener
-	http.HandleFunc("/connect", handlers.SseHandler.CreateNewSseConnection)
-	http.ListenAndServe("localhost:8081", nil)
+	router.GET(
+		"/connect",
+		handlers.SseHandler.HandleGinSseConnection,
+	)
+	router.Run("localhost:8080")
 }

@@ -18,11 +18,16 @@ type Services struct {
 	TokenService    auth2.TokenService
 }
 
-func CreateServices(db *pgxpool.Pool, secret string, rooms *map[uuid.UUID]*logic.Room) *Services {
+func CreateServices(
+	db *pgxpool.Pool,
+	secret string,
+	rooms *map[uuid.UUID]*logic.Room,
+	clientRegistry *logic.ClientRegistry,
+) *Services {
 	return &Services{
-		UsersService:    postgresql2.UserService{DB: db},
+		UsersService:    postgresql2.UserService{DB: db, ClientRegistry: clientRegistry},
 		RoomsService:    postgresql2.RoomService{DB: db},
-		MessagesService: postgresql2.MessageService{DB: db, Rooms: rooms},
+		MessagesService: postgresql2.MessageService{DB: db, ClientRegistry: clientRegistry},
 		AuthService:     auth2.Service{DB: db},
 		TokenService:    auth2.TokenService{Secret: []byte(secret)},
 	}

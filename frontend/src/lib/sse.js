@@ -7,7 +7,8 @@ const seenIds = new Set();
 let reconnectTimeout = null;
 let reconnectDelay = 1000;
 
-function handleNewMessage(msg) {
+function handleNewMessage(rawPayload) {
+  const msg = JSON.parse(rawPayload);
   if (!msg || !msg.room_id) return;
 
   if (msg.id) {
@@ -38,13 +39,10 @@ async function handleUserJoined(payload) {
   });
 }
 
-function handleEvent(roomEvent) {
-  const { room_event_type, payload } = roomEvent;
-  const parsed = typeof payload === 'string' ? JSON.parse(payload) : payload;
-
-  switch (room_event_type) {
+function handleEvent(eventType, eventPayload) {
+  switch (eventType) {
     case 'new_message':
-      handleNewMessage(parsed);
+      handleNewMessage(eventPayload);
       break;
     case 'user_joined':
       handleUserJoined(parsed);
@@ -61,15 +59,10 @@ function processChunk(buffer) {
   for (const event of events) {
     const lines = event.split('\n');
     let data = '';
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        data += line.slice(6);
-      }
-    }
-    if (!data) continue;
+    const eventType = lines[0].slice(lines[0].indexOf(":")+1);
+    const eventPayload = lines[1].slice(lines[1].indexOf(":")+1);
     try {
-      const roomEvent = JSON.parse(data);
-      handleEvent(roomEvent);
+      handleEvent(eventType, eventPayload);
     } catch {
       // skip malformed events
     }
@@ -124,6 +117,8 @@ function startConnection(token, username) {
       scheduleReconnect();
     })
     .catch((err) => {
+      console.log("handling error");
+      console.log(err);
       if (err.name === 'AbortError') return;
       scheduleReconnect();
     });

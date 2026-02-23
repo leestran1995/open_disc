@@ -44,6 +44,18 @@ func (u UserService) GetUserByID(ctx context.Context, userId uuid.UUID) (*opendi
 	return &user, nil
 }
 
+func (u UserService) GetUserByUsername(ctx context.Context, username string) (*opendisc.User, error) {
+	var user opendisc.User
+	row := u.DB.QueryRow(context.Background(), "select id, nickname from open_discord.users where username = $1", username)
+
+	err := row.Scan(&user.UserID, &user.Nickname)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 func (u UserService) GetAllUsers(ctx context.Context) ([]opendisc.User, error) {
 	var users []opendisc.User
 	rows, err := u.DB.Query(ctx, "select id, nickname, username from open_discord.users")

@@ -45,6 +45,31 @@ At the moment, all users in a server have access to all rooms in that server.
 - Rework `message` table to be scoped to any and all `RoomEvents`
 - 
 
+## Server Event Architecture & Approach
+
+### Event Order
+ServerEvents will contain an incrementing event_order integer. This will allow the FE to know if it missed any events
+(for example, if the FE receives event 1000 followed by 1002, it knows it missed 1001) and request the missing events.
+It also provides an easy way for the FE to say "The last event I saw was _, give me everything since then"
+
+### Event Payloads
+Identifiers in server event payloads should be the unchanging unique identifier (uuid) for the related domain object.
+For optimization's sake, we might consider sending changeable data (for example, user nicknames in messages) along with the
+events to save the FE the need to do a lookup.
+
+## Jargon
+
+- UserID
+  - UUID unique identifier for a given user, safe to send in API Responses
+- Username
+  - The username a user uses to log in to the server. Best not to include in API Responses for security's sake
+- Nickname
+  - User-chosen nickname that will be displayed in the frontend
+- Server Event
+  - Event representing something that has happened in the server, such as a message being sent or a new user joining the server.
+- Room
+  - Text channel
+
 ## Auth
 
 The whole point of this project is to avoid interacting with giant companies that don't care about user privacy

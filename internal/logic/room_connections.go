@@ -13,7 +13,7 @@ import (
 type RoomClient struct {
 	Username    string
 	Nickname    string
-	SendChannel chan opendisc.RoomEvent
+	SendChannel chan opendisc.ServerEvent
 }
 
 // Room represents a single room active on the server
@@ -32,9 +32,9 @@ func (r *Room) Send(message opendisc.Message) error {
 		return err
 	}
 
-	roomEvent := opendisc.RoomEvent{
-		RoomEventType: opendisc.NewMessage,
-		Payload:       asJson,
+	roomEvent := opendisc.ServerEvent{
+		ServerEventType: opendisc.NewMessage,
+		Payload:         asJson,
 	}
 
 	for _, client := range *r.ClientRegistry.Clients {

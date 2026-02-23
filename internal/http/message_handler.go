@@ -12,7 +12,8 @@ import (
 )
 
 type MessageHandler struct {
-	MessageService postgresql.MessageService
+	MessageService   postgresql.MessageService
+	ServerEventStore postgresql.ServerEventStore
 }
 
 func BindMessageRoutes(router *gin.Engine, messageHandler *MessageHandler) {
@@ -34,6 +35,18 @@ func (h *MessageHandler) HandleCreateMessage(c *gin.Context) {
 	}
 
 	r, err := h.MessageService.Create(c.Request.Context(), request, username.(string))
+
+	userId, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+	}
+	newRequest := opendisc.MessageCreateRequest{
+		UserID:  userId.(uuid.UUID),
+		RoomID:  request.RoomID,
+		Message: request.Message,
+	}
+
+	h.ServerEventStore.Create(c, opendisc.NewMessage, newRequest)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}

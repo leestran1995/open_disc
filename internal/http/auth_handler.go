@@ -87,6 +87,7 @@ func AuthMiddleware(t *auth2.TokenService) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{})
 		}
 		c.Set("username", claims.Username)
+		c.Set("user_id", claims.UserID)
 		c.Next()
 	}
 }

@@ -24,7 +24,7 @@ func (s *SseHandler) HandleGinSseConnection(c *gin.Context) {
 	slog.Info("Establishing new client connection")
 
 	username := c.GetString("username")
-	sendChannel := make(chan opendisc.RoomEvent, 50)
+	sendChannel := make(chan opendisc.ServerEvent, 50)
 
 	roomClient := logic.RoomClient{
 		Username:    username,
@@ -48,7 +48,7 @@ func (s *SseHandler) HandleGinSseConnection(c *gin.Context) {
 			return
 
 		case message := <-sendChannel:
-			c.SSEvent(string(message.RoomEventType), message.Payload)
+			c.SSEvent(string(message.ServerEventType), message.Payload)
 			c.Writer.Flush()
 		}
 	}

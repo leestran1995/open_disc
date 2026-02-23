@@ -42,17 +42,6 @@ func (s RoomService) GetByID(ctx context.Context, serverId uuid.UUID) (*opendisc
 	return &room, nil
 }
 
-func (s RoomService) JoinRoom(ctx context.Context, request opendisc.RoomJoinRequest, roomId uuid.UUID) error {
-	err := s.DB.QueryRow(ctx,
-		`insert into open_discord.user_room_pivot (user_id, room_id) values ($1, $2)`, request.UserID, roomId).Scan()
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (s RoomService) GetAllRooms(ctx context.Context) ([]opendisc.Room, error) {
 	var rooms []opendisc.Room
 	rows, err := s.DB.Query(ctx, "select * from open_discord.rooms order by sort_order")

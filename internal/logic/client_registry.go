@@ -8,9 +8,9 @@ type ClientRegistry struct {
 
 func (c *ClientRegistry) Connect(rc *RoomClient) {
 	(*c.Clients)[rc.Username] = rc
-	connectEvent := opendisc.RoomEvent{
-		RoomEventType: opendisc.UserJoined,
-		Payload:       rc.Username,
+	connectEvent := opendisc.ServerEvent{
+		ServerEventType: opendisc.UserJoined,
+		Payload:         rc.Username,
 	}
 
 	c.FanOutMessage(connectEvent)
@@ -19,9 +19,9 @@ func (c *ClientRegistry) Connect(rc *RoomClient) {
 func (c *ClientRegistry) Disconnect(rc RoomClient) {
 	delete(*c.Clients, rc.Username)
 
-	disconnectEvent := opendisc.RoomEvent{
-		RoomEventType: opendisc.UserLeft,
-		Payload:       rc.Username,
+	disconnectEvent := opendisc.ServerEvent{
+		ServerEventType: opendisc.UserLeft,
+		Payload:         rc.Username,
 	}
 
 	c.FanOutMessage(disconnectEvent)
@@ -31,7 +31,7 @@ func (c *ClientRegistry) IsOnline(username string) bool {
 	return (*c.Clients)[username] != nil
 }
 
-func (c *ClientRegistry) FanOutMessage(message opendisc.RoomEvent) {
+func (c *ClientRegistry) FanOutMessage(message opendisc.ServerEvent) {
 	for _, rc := range *c.Clients {
 		rc.SendChannel <- message
 	}

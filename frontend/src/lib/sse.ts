@@ -40,6 +40,11 @@ async function handleRoomCreated(_roomName: string): Promise<void> {
  * We use `as` casts after the switch because each event type has a known
  * payload shape from the Go backend, but TypeScript can't infer that
  * from JSON.parse().
+ *
+ * Note: the backend currently double-fans-out new_message and room_created
+ * events (once as a bare payload, once wrapped in a ServerEvent envelope).
+ * The envelope version naturally gets dropped — handleNewMessage bails on
+ * missing top-level room_id, and handleRoomCreated is idempotent.
  */
 function handleEvent(eventType: string, rawData: string): void {
   let parsed: unknown;

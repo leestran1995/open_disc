@@ -50,6 +50,7 @@ export interface User {
  * only need them for session restore, not security.
  */
 export interface JWTClaims {
+  id: string;
   username: string;
   exp: number;
   iat: number;
@@ -90,17 +91,32 @@ export function isApiError(result: unknown): result is ApiError {
 // ---------------------------------------------------------------------
 // SSE event types
 //
-// Mirrors Go RoomEventType constants (message.go). Defined for
+// Mirrors Go ServerEventType constants (message.go). Defined for
 // documentation; sse.ts uses plain `string` for the event type
 // parameter since the wire data is unvalidated.
 // ---------------------------------------------------------------------
 
-export type RoomEventType =
+export type ServerEventType =
   | 'new_message'
   | 'user_joined'
   | 'user_left'
   | 'room_created'
   | 'room_deleted';
+
+/**
+ * Go: ServerEvent (message.go)
+ *
+ * Wraps all persisted server events. Events sent via SSE with
+ * server_event_order > 0 arrive in this envelope; legacy events
+ * (user_joined/user_left) arrive as bare payloads with order 0.
+ */
+export interface ServerEvent {
+  server_event_type: ServerEventType;
+  server_event_id: string;
+  server_event_order: number;
+  server_event_time: string;
+  payload: unknown;
+}
 
 // ---------------------------------------------------------------------
 // Frontend-only types
@@ -113,6 +129,11 @@ export interface EmojiSuggestion {
 
 /** Store shape: room ID → ordered message array. */
 export type MessagesByRoom = Record<string, Message[]>;
+
+/** GET /events → gin.H{"server_events": [...]} */
+export interface ServerEventsResponse {
+  server_events: ServerEvent[];
+}
 
 // ---------------------------------------------------------------------
 // API response envelopes

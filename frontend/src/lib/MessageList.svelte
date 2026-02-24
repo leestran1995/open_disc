@@ -17,7 +17,7 @@
       if (result && 'messages' in result) {
         messagesByRoom.update(current => ({
           ...current,
-          [roomId]: result.messages.reverse()
+          [roomId]: (result.messages ?? []).reverse()
         }));
       }
     });

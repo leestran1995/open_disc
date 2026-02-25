@@ -76,6 +76,7 @@ func (h *RoomHandler) HandleGetRoomByID(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	user, err := h.RoomService.GetByID(c.Request.Context(), asUuid)

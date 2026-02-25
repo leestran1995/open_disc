@@ -27,11 +27,13 @@ func (h *MessageHandler) HandleCreateMessage(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	username, exists := c.Get("username")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
 	}
 
 	r, err := h.MessageService.Create(c.Request.Context(), request, username.(string))
@@ -39,6 +41,7 @@ func (h *MessageHandler) HandleCreateMessage(c *gin.Context) {
 	userId, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
 	}
 	newRequest := opendisc.MessageCreateRequest{
 		UserID:  userId.(uuid.UUID),
@@ -58,6 +61,7 @@ func (h *MessageHandler) HandleGetMessages(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	timestampString := c.Query("timestamp")
@@ -68,16 +72,14 @@ func (h *MessageHandler) HandleGetMessages(c *gin.Context) {
 		timestamp, err = time.Parse(time.RFC3339Nano, timestampString)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
-	}
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
 	result, err := h.MessageService.GetMessagesByTimestamp(c, roomId, timestamp)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"messages": result})
 }

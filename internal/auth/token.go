@@ -24,6 +24,10 @@ type Claims struct {
 
 func (t *TokenService) GenerateJWT(username string) (string, error) {
 	user, err := t.UserService.GetUserByUsername(context.Background(), username)
+	if err != nil {
+		return "", err
+	}
+
 	claims := Claims{
 		Username: username,
 		UserID:   user.UserID,

@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import { authToken } from './stores';
-import type { ApiResult, SigninResponse, SignupResponse, MessagesResponse, MessageCreateResponse, Room } from './types';
+import type { ApiResult, SigninResponse, SignupResponse, MessagesResponse, MessageCreateResponse, Room, ServerEventsResponse } from './types';
 
 const BASE = '/api';
 
@@ -97,4 +97,11 @@ export function updateRoomOrder(roomIds: string[]): Promise<ApiResult<null>> {
     method: 'PUT',
     body: JSON.stringify({ room_ids: roomIds }),
   });
+}
+
+/** GET /events — fetch server events by order range for gap-fill on reconnect. */
+export function getServerEvents(orderStart: number, orderEnd?: number): Promise<ApiResult<ServerEventsResponse>> {
+  let query = `?event_order_start=${orderStart}`;
+  if (orderEnd !== undefined) query += `&event_order_end=${orderEnd}`;
+  return request<ServerEventsResponse>(`/events${query}`);
 }

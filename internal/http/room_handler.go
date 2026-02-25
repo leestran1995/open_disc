@@ -36,6 +36,8 @@ func BindRoomRoutes(router *gin.Engine, RoomHandler *RoomHandler) {
 	router.GET("/rooms/:id", RoomHandler.HandleGetRoomByID)
 	router.GET("/rooms", RoomHandler.HandleGetAllRooms)
 	router.PUT("/rooms/order", RoomHandler.HandleSwapRoomOrder)
+	router.PUT("/rooms/:roomId/star", RoomHandler.HandleStarRoom)
+	router.DELETE("/rooms/:roomId/star", RoomHandler.HandleStarRoom)
 }
 
 func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
@@ -112,4 +114,45 @@ func (h *RoomHandler) HandleGetAllRooms(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, res)
+}
+
+func (h *RoomHandler) HandleStarRoom(c *gin.Context) {
+	roomId := c.Param("roomId")
+	if roomId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "roomId is empty"})
+		return
+	}
+
+	var roomUuid, err = uuid.Parse(roomId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userUuid, exists := c.Get("user_id")
+
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "user_id not found"})
+		return
+	}
+
+	methodType := c.Request.Method
+
+	switch methodType {
+	case "PUT":
+		err := h.RoomService.StarRoom(c, userUuid.(uuid.UUID), roomUuid)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	case "DELETE":
+		err := h.RoomService.UnstarRoom(c, userUuid.(uuid.UUID), roomUuid)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid method"})
+		return
+	}
 }

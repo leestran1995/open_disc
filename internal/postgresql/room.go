@@ -85,3 +85,22 @@ func (s RoomService) ReorderRooms(ctx context.Context, req opendisc.SwapRoomOrde
 
 	return tx.Commit(ctx)
 }
+
+func (s RoomService) StarRoom(ctx context.Context, userUuid uuid.UUID, roomUuid uuid.UUID) error {
+	_, err := s.DB.Exec(ctx,
+		`insert into open_discord.user_room_stars(user_id, room_id) values ($1, $2)`,
+		userUuid, roomUuid)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s RoomService) UnstarRoom(ctx context.Context, userUuid uuid.UUID, roomUuid uuid.UUID) error {
+	_, err := s.DB.Exec(ctx,
+		`delete from open_discord.user_room_stars where user_id = $1 and room_id = $2`, userUuid, roomUuid)
+	if err != nil {
+		return err
+	}
+	return nil
+}

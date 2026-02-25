@@ -1,0 +1,1 @@
+drop table open_discord.user_room_stars;

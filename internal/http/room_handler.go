@@ -33,7 +33,6 @@ func NewRoomHandler(
 
 func BindRoomRoutes(router *gin.Engine, RoomHandler *RoomHandler) {
 	router.POST("/rooms", RoomHandler.HandleCreateRoom)
-	router.GET("/rooms/:id", RoomHandler.HandleGetRoomByID)
 	router.GET("/rooms", RoomHandler.HandleGetAllRooms)
 	router.PUT("/rooms/order", RoomHandler.HandleSwapRoomOrder)
 	router.PUT("/rooms/:roomId/star", RoomHandler.HandleStarRoom)
@@ -70,24 +69,6 @@ func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
 	h.ClientRegistry.FanOutMessage(roomCreatedEvent)
 
 	c.JSON(http.StatusCreated, u)
-}
-
-func (h *RoomHandler) HandleGetRoomByID(c *gin.Context) {
-	roomId := c.Param("id")
-	asUuid, err := uuid.Parse(roomId)
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	user, err := h.RoomService.GetByID(c.Request.Context(), asUuid)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, user)
 }
 
 func (h *RoomHandler) HandleSwapRoomOrder(c *gin.Context) {

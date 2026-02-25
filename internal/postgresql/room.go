@@ -31,18 +31,6 @@ func (s RoomService) Create(ctx context.Context, request opendisc.CreateRoomRequ
 	return &room, nil
 }
 
-func (s RoomService) GetByID(ctx context.Context, serverId uuid.UUID) (*opendisc.Room, error) {
-	var room opendisc.Room
-	row := s.DB.QueryRow(ctx, "select * from open_discord.rooms where id = $1", serverId)
-
-	err := row.Scan(&room.ID, &room.Name, &room.SortOrder)
-	if err != nil {
-		return nil, err
-	}
-
-	return &room, nil
-}
-
 // GetAllRooms returns all rooms along with whether the calling user has starred them. If there is no calling user,
 // then userId will be null and we will mark all rooms as false (for the purposes of system calls)
 func (s RoomService) GetAllRooms(ctx context.Context, userId *uuid.UUID) ([]opendisc.Room, error) {

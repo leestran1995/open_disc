@@ -10,6 +10,19 @@ instance, so a user's username/password on `Server A` is completely separate fro
 
 At the moment, all users in a server have access to all rooms in that server.
 
+## Initial Setup And Running
+
+1. Spin up a postgresql server
+2. Fill in placeholder values in `local.env.sample` and then rename it to `local.env`
+3. Start the backend by running `go run ./internal/main/main.go`
+4. Start the frontend by running `bun run dev` while in the `frontend` subdirectory
+
+### DB Migrations
+
+The DB migrations are tracked in the `migrations` directory, and can be run
+by using [golang-migrate](https://github.com/golang-migrate/migrate). After installing golang-migrate,
+simply run `migrate -source file://migrations -database [YOUR_DB_URL] up`
+
 ## Feature plans
 
 - Immediate next thing:

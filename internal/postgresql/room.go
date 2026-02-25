@@ -6,6 +6,7 @@ import (
 	"open_discord"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -42,15 +43,25 @@ func (s RoomService) GetByID(ctx context.Context, serverId uuid.UUID) (*opendisc
 	return &room, nil
 }
 
+// GetAllRooms returns all rooms along with whether the calling user has starred them. If there is no calling user,
+// then userId will be null and we will mark all rooms as false (for the purposes of system calls)
 func (s RoomService) GetAllRooms(ctx context.Context, userId *uuid.UUID) ([]opendisc.Room, error) {
 	var rooms []opendisc.Room
-	rows, err := s.DB.Query(ctx, `select r.id, r.name, r.sort_order, urs.user_id is not null as starred
+	var sql string
+	var rows pgx.Rows
+	var err error
+
+	if userId == nil {
+		sql = `select id, name, sort_order, false as starred from open_discord.rooms`
+		rows, err = s.DB.Query(ctx, sql)
+	} else {
+		sql = `select r.id, r.name, r.sort_order, urs.user_id is not null as starred
 				from open_discord.rooms r
-						 left join open_discord.user_room_stars urs on r.id = urs.room_id
-				where ($1::uuid is null or $1::uuid = urs.user_id)
-				order by r.sort_order`,
-		userId,
-	)
+						 left join open_discord.user_room_stars urs on r.id = urs.room_id and urs.user_id = $1
+				order by r.sort_order`
+		rows, err = s.DB.Query(ctx, sql, *userId)
+	}
+
 	if err != nil {
 		return nil, err
 	}

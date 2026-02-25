@@ -107,7 +107,14 @@ func (h *RoomHandler) HandleSwapRoomOrder(c *gin.Context) {
 }
 
 func (h *RoomHandler) HandleGetAllRooms(c *gin.Context) {
-	res, err := h.RoomService.GetAllRooms(c, nil)
+	userId, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	asUuid := userId.(uuid.UUID)
+
+	res, err := h.RoomService.GetAllRooms(c, &asUuid)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

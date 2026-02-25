@@ -1,25 +1,36 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"open_discord/internal/postgresql"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type TokenService struct {
-	Secret []byte
+	Secret      []byte
+	UserService *postgresql.UserService
 }
 
 type Claims struct {
-	Username string `json:"username"`
+	UserID   uuid.UUID `json:"id"`
+	Username string    `json:"username"`
 	jwt.RegisteredClaims
 }
 
 func (t *TokenService) GenerateJWT(username string) (string, error) {
+	user, err := t.UserService.GetUserByUsername(context.Background(), username)
+	if err != nil {
+		return "", err
+	}
+
 	claims := Claims{
 		Username: username,
+		UserID:   user.UserID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

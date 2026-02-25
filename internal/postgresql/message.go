@@ -31,9 +31,9 @@ func (s MessageService) Create(ctx context.Context, request opendisc.MessageCrea
 		return nil, err
 	}
 
-	roomEvent := opendisc.RoomEvent{
-		RoomEventType: opendisc.NewMessage,
-		Payload:       message,
+	roomEvent := opendisc.ServerEvent{
+		ServerEventType: opendisc.NewMessage,
+		Payload:         message,
 	}
 	s.ClientRegistry.FanOutMessage(roomEvent)
 

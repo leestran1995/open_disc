@@ -10,6 +10,19 @@ instance, so a user's username/password on `Server A` is completely separate fro
 
 At the moment, all users in a server have access to all rooms in that server.
 
+## Initial Setup And Running
+
+1. Spin up a postgresql server
+2. Fill in placeholder values in `local.env.sample` and then rename it to `local.env`
+3. Start the backend by running `go run ./internal/main/main.go`
+4. Start the frontend by running `bun run dev` while in the `frontend` subdirectory
+
+### DB Migrations
+
+The DB migrations are tracked in the `migrations` directory, and can be run
+by using [golang-migrate](https://github.com/golang-migrate/migrate). After installing golang-migrate,
+simply run `migrate -source file://migrations -database [YOUR_DB_URL] up`
+
 ## Feature plans
 
 - Immediate next thing:
@@ -44,6 +57,31 @@ At the moment, all users in a server have access to all rooms in that server.
 - Refactor rooms to each be run in its own goroutine
 - Rework `message` table to be scoped to any and all `RoomEvents`
 - 
+
+## Server Event Architecture & Approach
+
+### Event Order
+ServerEvents will contain an incrementing event_order integer. This will allow the FE to know if it missed any events
+(for example, if the FE receives event 1000 followed by 1002, it knows it missed 1001) and request the missing events.
+It also provides an easy way for the FE to say "The last event I saw was _, give me everything since then"
+
+### Event Payloads
+Identifiers in server event payloads should be the unchanging unique identifier (uuid) for the related domain object.
+For optimization's sake, we might consider sending changeable data (for example, user nicknames in messages) along with the
+events to save the FE the need to do a lookup.
+
+## Jargon
+
+- UserID
+  - UUID unique identifier for a given user, safe to send in API Responses
+- Username
+  - The username a user uses to log in to the server. Best not to include in API Responses for security's sake
+- Nickname
+  - User-chosen nickname that will be displayed in the frontend
+- Server Event
+  - Event representing something that has happened in the server, such as a message being sent or a new user joining the server.
+- Room
+  - Text channel
 
 ## Auth
 

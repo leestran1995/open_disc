@@ -79,6 +79,7 @@ func main() {
 	http2.BindRoomRoutes(router, &handlers.RoomHandler)
 	http2.BindMessageRoutes(router, &handlers.MessagesHandler)
 	http2.BindAuthRoutes(router, &handlers.AuthHandler)
+	http2.BindServerEventRoutes(router, &handlers.ServerEventHandler)
 	router.GET(
 		"/connect",
 		handlers.SseHandler.HandleGinSseConnection,

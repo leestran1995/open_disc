@@ -30,21 +30,25 @@ func (h *AuthHandler) HandleSignIn(c *gin.Context) {
 	var req SignInRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	signInResult, err := h.Auth.CheckPassword(req.Username, req.Password)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	if !signInResult {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid username or password"})
+		return
 	}
 
 	mintedToken, err := h.Token.GenerateJWT(req.Username)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": mintedToken})
@@ -54,11 +58,13 @@ func (h *AuthHandler) HandleSignUp(c *gin.Context) {
 	var req SignInRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	err := h.Auth.Signup(req.Username, req.Password)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": "ok"})
 }

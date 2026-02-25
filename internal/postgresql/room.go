@@ -42,9 +42,15 @@ func (s RoomService) GetByID(ctx context.Context, serverId uuid.UUID) (*opendisc
 	return &room, nil
 }
 
-func (s RoomService) GetAllRooms(ctx context.Context) ([]opendisc.Room, error) {
+func (s RoomService) GetAllRooms(ctx context.Context, userId *uuid.UUID) ([]opendisc.Room, error) {
 	var rooms []opendisc.Room
-	rows, err := s.DB.Query(ctx, "select * from open_discord.rooms order by sort_order")
+	rows, err := s.DB.Query(ctx, `select r.id, r.name, r.sort_order, urs.user_id is not null as starred
+				from open_discord.rooms r
+						 left join open_discord.user_room_stars urs on r.id = urs.room_id
+				where ($1::uuid is null or $1::uuid = urs.user_id)
+				order by r.sort_order`,
+		userId,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +63,7 @@ func (s RoomService) GetAllRooms(ctx context.Context) ([]opendisc.Room, error) {
 
 	for hasNext {
 		var room opendisc.Room
-		err := rows.Scan(&room.ID, &room.Name, &room.SortOrder)
+		err := rows.Scan(&room.ID, &room.Name, &room.SortOrder, &room.Starred)
 		if err != nil {
 			return nil, err
 		}

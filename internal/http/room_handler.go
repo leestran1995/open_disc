@@ -107,7 +107,7 @@ func (h *RoomHandler) HandleSwapRoomOrder(c *gin.Context) {
 }
 
 func (h *RoomHandler) HandleGetAllRooms(c *gin.Context) {
-	res, err := h.RoomService.GetAllRooms(c)
+	res, err := h.RoomService.GetAllRooms(c, nil)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

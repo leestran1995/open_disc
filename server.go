@@ -6,6 +6,7 @@ type Room struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
 	SortOrder int       `json:"sort_order"`
+	Starred   bool      `json:"starred"`
 }
 
 type CreateRoomRequest struct {

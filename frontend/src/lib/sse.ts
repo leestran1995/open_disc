@@ -140,7 +140,8 @@ export function connectSSE(token: string, username: string): void {
 function startConnection(token: string, username: string): void {
   abortController = new AbortController();
 
-  fetch(`/sse/connect`, {
+  const sseBase = import.meta.env.VITE_SSE_BASE || '/sse';
+  fetch(`${sseBase}/connect`, {
     headers: { Authorization: `Bearer ${token}` },
     signal: abortController.signal,
   })

@@ -2,7 +2,7 @@ import { get } from 'svelte/store';
 import { authToken } from './stores';
 import type { ApiResult, SigninResponse, SignupResponse, MessagesResponse, MessageCreateResponse, Room, ServerEventsResponse } from './types';
 
-const BASE = '/api';
+const BASE = import.meta.env.VITE_API_BASE || '/api';
 
 /**
  * Generic HTTP client. Attaches JWT from the auth store and returns a

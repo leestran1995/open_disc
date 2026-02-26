@@ -57,7 +57,7 @@ func main() {
 	handlers := util.CreateHandlers(services, &rooms, &clientRegistry)
 
 	// Add all existing rooms to memory
-	allRooms, err := services.RoomsService.GetAllRooms(context.Background())
+	allRooms, err := services.RoomsService.GetAllRooms(context.Background(), nil)
 	if err != nil {
 		log.Fatalf("Unable to get all rooms: %v\n", err)
 	}
@@ -84,5 +84,5 @@ func main() {
 		"/connect",
 		handlers.SseHandler.HandleGinSseConnection,
 	)
-	router.Run("localhost:8080")
+	router.Run(":8080")
 }

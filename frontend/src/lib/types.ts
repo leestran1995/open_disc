@@ -17,6 +17,7 @@ export interface Room {
   id: string;
   name: string;
   sort_order: number;
+  starred: boolean;
 }
 
 /** Go: domain.Message (message.go) */

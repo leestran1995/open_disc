@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createRoom, updateRoomOrder } from './api';
+  import { createRoom, updateRoomOrder, starRoom, unstarRoom } from './api';
   import { authToken, rooms, activeRoomId, currentUser, messagesByRoom } from './stores';
   import { get } from 'svelte/store';
   import ThemeToggle from './ThemeToggle.svelte';
@@ -96,6 +96,24 @@
     activeRoomId.set(roomId);
   }
 
+  async function toggleStar(e: MouseEvent, room: Room): Promise<void> {
+    e.stopPropagation();
+    const wasStarred = room.starred;
+
+    // Optimistic update
+    rooms.update((list) =>
+      list.map((r) => r.id === room.id ? { ...r, starred: !wasStarred } : r)
+    );
+
+    const result = wasStarred ? await unstarRoom(room.id) : await starRoom(room.id);
+    if (result && '_error' in result) {
+      // Rollback
+      rooms.update((list) =>
+        list.map((r) => r.id === room.id ? { ...r, starred: wasStarred } : r)
+      );
+    }
+  }
+
   function logout(): void {
     disconnectSSE();
     localStorage.removeItem('token');
@@ -131,7 +149,18 @@
         ondragend={handleDragEnd}
         onclick={() => selectRoom(room.id)}
       >
-        # {room.name}
+        <span class="room-name"># {room.name}</span>
+        <span
+          class="star-btn"
+          class:starred={room.starred}
+          onclick={(e: MouseEvent) => toggleStar(e, room)}
+          onkeydown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleStar(e as unknown as MouseEvent, room); } }}
+          role="button"
+          tabindex="-1"
+          title={room.starred ? 'Unstar room' : 'Star room'}
+        >
+          {room.starred ? '\u2605' : '\u2606'}
+        </span>
       </button>
     {/each}
     {#if dropTargetIndex === $rooms.length}
@@ -186,7 +215,8 @@
   }
 
   .room-item {
-    display: block;
+    display: flex;
+    align-items: center;
     width: 100%;
     text-align: left;
     padding: 0.4rem 1rem;
@@ -196,9 +226,35 @@
     font-size: 0.9rem;
     border-radius: 0;
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
     cursor: grab;
+  }
+
+  .room-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .star-btn {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    opacity: 0.3;
+    font-size: 0.85rem;
+    padding: 0 0.2em;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .room-item:hover .star-btn {
+    opacity: 0.6;
+  }
+
+  .star-btn.starred {
+    opacity: 1;
+    color: var(--yellow);
   }
 
   .room-item.dragging {

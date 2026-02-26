@@ -84,5 +84,5 @@ func main() {
 		"/connect",
 		handlers.SseHandler.HandleGinSseConnection,
 	)
-	router.Run("localhost:8080")
+	router.Run(":8080")
 }

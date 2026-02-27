@@ -8,6 +8,7 @@
 
   let username = $state('');
   let password = $state('');
+  let otc = $state('');
   let error = $state('');
   let message = $state('');
   let loading = $state(false);
@@ -22,7 +23,7 @@
     message = '';
 
     if (mode === 'signup') {
-      const result = await signup(username.trim(), password);
+      const result = await signup(username.trim(), password, otc);
       if (result && !('_error' in result)) {
         message = 'Account created! Sign in below.';
         mode = 'signin';
@@ -76,6 +77,14 @@
         bind:value={password}
         disabled={loading}
       />
+      {#if mode === 'signup'}
+      <input
+        type="text"
+        placeholder="One-Time Code (for sign up)"
+        bind:value={otc}
+        disabled={loading}
+        />
+        {/if}
       <button type="submit" disabled={loading || !username.trim() || !password}>
         {loading ? (mode === 'signin' ? 'Signing in...' : 'Signing up...') : (mode === 'signin' ? 'Sign In' : 'Sign Up')}
       </button>

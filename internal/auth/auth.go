@@ -3,8 +3,10 @@ package auth
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/alexedwards/argon2id"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -14,7 +16,7 @@ type Service struct {
 
 // Signup
 // Signs a user up, returns an error if signup failed. Sets initial nickname to be same as username
-func (a *Service) Signup(username string, password string) error {
+func (a *Service) Signup(username string, password string, otc uuid.UUID) error {
 	if a.UsernameExists(username) {
 		return errors.New("username exists")
 	}
@@ -30,13 +32,42 @@ func (a *Service) Signup(username string, password string) error {
 		return err
 	}
 
-	_, err = a.DB.Query(context.Background(),
+	var otcExists bool
+	a.DB.QueryRow(context.Background(),
+		`select exists(
+		select * from open_discord.signup_otcs o
+			 where o.code = $1
+			 and o.used = false
+			 and o.time_expires > now())
+			 `, otc).Scan(&otcExists)
+
+	if !otcExists {
+		return errors.New("invalid otc")
+	}
+
+	tx, err := a.DB.Begin(context.Background())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.Background())
+
+	_, err = tx.Exec(context.Background(),
 		`insert into open_discord.users(nickname, username, password) values ($1,$2,$3)`, username, username, passwordHash)
 
 	if err != nil {
 		return err
 	}
 
+	_, err = tx.Exec(context.Background(), `update open_discord.signup_otcs o set used = true where o.code = $1`, otc)
+	if err != nil {
+		slog.Error(err.Error())
+		return err
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

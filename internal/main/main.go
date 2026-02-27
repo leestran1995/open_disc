@@ -10,6 +10,7 @@ import (
 	"open_discord/internal/util"
 	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -73,12 +74,12 @@ func main() {
 
 	// Router setup
 	router := setupRouter()
-	// router.Use(cors.New(cors.Config{
-	// 	AllowOrigins:     []string{"https://chat.lee.fail"},
-	// 	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-	// 	AllowHeaders:     []string{"Authorization", "Content-Type"},
-	// 	AllowCredentials: true,
-	// }))
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"https://chat.lee.fail"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Authorization", "Content-Type"},
+		AllowCredentials: true,
+	}))
 	router.Use(http2.AuthMiddleware(&services.TokenService))
 
 	http2.BindUserRoutes(router, &handlers.UserHandler)

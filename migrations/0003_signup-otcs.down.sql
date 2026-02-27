@@ -1,0 +1,1 @@
+drop table open_discord.signup_otcs;

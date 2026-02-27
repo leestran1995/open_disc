@@ -10,7 +10,6 @@ import (
 	"open_discord/internal/util"
 	"os"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -60,7 +59,7 @@ func main() {
 	// Add all existing rooms to memory
 	allRooms, err := services.RoomsService.GetAllRooms(context.Background(), nil)
 	if err != nil {
-		log.Fatalf("Unable to get all rooms: %v\n", err)
+		/clog.Fatalf("Unable to get all rooms: %v\n", err)
 	}
 
 	for _, room := range allRooms {

@@ -99,6 +99,16 @@ export function updateRoomOrder(roomIds: string[]): Promise<ApiResult<null>> {
   });
 }
 
+/** PUT /rooms/:roomId/star — star a room. Backend returns empty 200. */
+export function starRoom(roomId: string): Promise<ApiResult<null>> {
+  return request<null>(`/rooms/${roomId}/star`, { method: 'PUT' });
+}
+
+/** DELETE /rooms/:roomId/star — unstar a room. Backend returns empty 200. */
+export function unstarRoom(roomId: string): Promise<ApiResult<null>> {
+  return request<null>(`/rooms/${roomId}/star`, { method: 'DELETE' });
+}
+
 /** GET /events — fetch server events by order range for gap-fill on reconnect. */
 export function getServerEvents(orderStart: number, orderEnd?: number): Promise<ApiResult<ServerEventsResponse>> {
   let query = `?event_order_start=${orderStart}`;

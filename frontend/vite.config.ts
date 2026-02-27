@@ -8,12 +8,12 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://google.com',
         changeOrigin: true,
         rewrite: (path: string) => path.replace(/^\/api/, ''),
       },
       '/sse': {
-        target: 'http://localhost:8080',
+        target: 'http://google.com',
         changeOrigin: true,
         rewrite: (path: string) => path.replace(/^\/sse/, ''),
       },

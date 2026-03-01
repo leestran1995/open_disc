@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"open_discord/internal/auth"
+	"open_discord/internal/cli"
 	http2 "open_discord/internal/http"
 	"open_discord/internal/logic"
 	"open_discord/internal/util"
@@ -91,5 +93,9 @@ func main() {
 		"/connect",
 		handlers.SseHandler.HandleGinSseConnection,
 	)
+	fmt.Println("Starting CLI")
+	otc := auth.Otc{DB: pool}
+	cli := cli.Cli{Otc: &otc}
+	go cli.Run()
 	router.Run(":8080")
 }

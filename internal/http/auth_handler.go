@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type AuthHandler struct {
@@ -14,8 +15,9 @@ type AuthHandler struct {
 }
 
 type SignInRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string    `json:"username"`
+	Password string    `json:"password"`
+	Otc      uuid.UUID `json:"otc,omitempty"`
 }
 
 const signupRoute = "/signup"
@@ -61,7 +63,7 @@ func (h *AuthHandler) HandleSignUp(c *gin.Context) {
 		return
 	}
 
-	err := h.Auth.Signup(req.Username, req.Password)
+	err := h.Auth.Signup(req.Username, req.Password, req.Otc)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

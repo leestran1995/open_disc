@@ -43,10 +43,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<ApiR
   }
 }
 
-export function signup(username: string, password: string): Promise<ApiResult<SignupResponse>> {
+export function signup(username: string, password: string, otc: string): Promise<ApiResult<SignupResponse>> {
   return request<SignupResponse>('/signup', {
     method: 'POST',
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, otc }),
   });
 }
 

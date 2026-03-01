@@ -133,7 +133,38 @@
     <ThemeToggle />
   </div>
 
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="room-list" ondragleave={handleDragLeave}>
+  {#each $rooms.filter(r => r.starred) as starred_room, index (starred_room.id)}
+      {#if dropTargetIndex === index && draggedRoomId !== starred_room.id}
+        <div class="drop-indicator"></div>
+      {/if}
+      <button
+        class="room-item"
+        class:active={$activeRoomId === starred_room.id}
+        class:dragging={draggedRoomId === starred_room.id}
+        draggable="true"
+        ondragstart={(e) => handleDragStart(e, starred_room)}
+        ondragover={(e) => handleDragOver(e, index)}
+        ondrop={handleDrop}
+        ondragend={handleDragEnd}
+        onclick={() => selectRoom(starred_room.id)}
+      >
+        <span class="room-name"># {starred_room.name}</span>
+        <span
+          class="star-btn"
+          class:starred={starred_room.starred}
+          onclick={(e: MouseEvent) => toggleStar(e, starred_room)}
+          onkeydown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleStar(e as unknown as MouseEvent, starred_room); } }}
+          role="button"
+          tabindex="-1"
+          title={starred_room.starred ? 'Unstar room' : 'Star room'}
+        >
+          {starred_room.starred ? '\u2605' : '\u2606'}
+        </span>
+      </button>
+    {/each}
+    <p>-------------------------------------------------------</p>
     {#each $rooms as room, index (room.id)}
       {#if dropTargetIndex === index && draggedRoomId !== room.id}
         <div class="drop-indicator"></div>

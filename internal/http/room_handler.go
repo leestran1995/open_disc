@@ -132,15 +132,12 @@ func (h *RoomHandler) HandleStarRoom(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
-		return
 	case "DELETE":
 		err := h.RoomService.UnstarRoom(c, userUuid.(uuid.UUID), roomUuid)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
-		return
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid method"})
-		return
 	}
 }

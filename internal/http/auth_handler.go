@@ -20,12 +20,18 @@ type SignInRequest struct {
 	Otc      uuid.UUID `json:"otc,omitempty"`
 }
 
+type CheckPasswordRequest struct {
+	Password string `json:"password"`
+}
+
 const signupRoute = "/signup"
 const signInRoute = "/signin"
+const checkPasswordRoute = "/check_password"
 
 func BindAuthRoutes(router *gin.Engine, authHandler *AuthHandler) {
 	router.POST(signInRoute, authHandler.HandleSignIn)
 	router.POST(signupRoute, authHandler.HandleSignUp)
+	router.POST(checkPasswordRoute, authHandler.CheckPassword)
 }
 
 func (h *AuthHandler) HandleSignIn(c *gin.Context) {
@@ -71,11 +77,23 @@ func (h *AuthHandler) HandleSignUp(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"data": "ok"})
 }
 
+func (h *AuthHandler) CheckPassword(c *gin.Context) {
+	var req CheckPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	result := auth2.CheckPasswordStrength(req.Password)
+
+	c.JSON(http.StatusOK, gin.H{"data": result})
+}
+
 func AuthMiddleware(t *auth2.TokenService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := c.FullPath()
 
-		if path == signupRoute || path == signInRoute {
+		if path == signupRoute || path == signInRoute || path == checkPasswordRoute {
 			c.Next()
 			return
 		}

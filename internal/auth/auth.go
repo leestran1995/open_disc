@@ -155,3 +155,36 @@ func (a *Service) CheckPassword(username, password string) (bool, error) {
 
 	return result, nil
 }
+
+func (s *Service) ChangePassword(username, oldPassword, newPassword string) error {
+	if oldPassword == newPassword {
+		return errors.New("new password cannot be the same as the old password")
+	}
+
+	// First, verify the old password is correct
+	isValid, err := s.CheckPassword(username, oldPassword)
+	if err != nil {
+		return err
+	}
+	if !isValid {
+		return errors.New("old password is incorrect")
+	}
+
+	// Validate the new password strength
+	result := CheckPasswordStrength(newPassword)
+	if !result.IsValid() {
+		return errors.New("new password does not meet strength requirements")
+	}
+
+	// Hash the new password
+	newPasswordHash, err := s.HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	// Update the user's password in the database
+	_, err = s.DB.Exec(context.Background(),
+		`update open_discord.users u set u.password = $1 where u.username = $2`, newPasswordHash, username)
+
+	return err
+}

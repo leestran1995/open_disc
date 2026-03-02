@@ -24,14 +24,22 @@ type CheckPasswordRequest struct {
 	Password string `json:"password"`
 }
 
+type ChangePasswordRequest struct {
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+}
+
 const signupRoute = "/signup"
 const signInRoute = "/signin"
 const checkPasswordRoute = "/check_password"
+const changePasswordRoute = "/change_password"
 
 func BindAuthRoutes(router *gin.Engine, authHandler *AuthHandler) {
 	router.POST(signInRoute, authHandler.HandleSignIn)
 	router.POST(signupRoute, authHandler.HandleSignUp)
 	router.POST(checkPasswordRoute, authHandler.CheckPassword)
+	router.POST(changePasswordRoute, authHandler.ChangePassword)
+
 }
 
 func (h *AuthHandler) HandleSignIn(c *gin.Context) {
@@ -87,6 +95,22 @@ func (h *AuthHandler) CheckPassword(c *gin.Context) {
 	result := auth2.CheckPasswordStrength(req.Password)
 
 	c.JSON(http.StatusOK, gin.H{"data": result})
+}
+
+func (h *AuthHandler) ChangePassword(c *gin.Context) {
+	var req ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	username := c.GetString("username")
+	err := h.Auth.ChangePassword(username, req.OldPassword, req.NewPassword)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": "ok"})
 }
 
 func AuthMiddleware(t *auth2.TokenService) gin.HandlerFunc {

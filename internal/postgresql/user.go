@@ -4,7 +4,7 @@ import (
 	"context"
 	"open_discord/internal/logic"
 
-	"open_discord"
+	opendisc "open_discord"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,23 +13,6 @@ import (
 type UserService struct {
 	DB             *pgxpool.Pool
 	ClientRegistry *logic.ClientRegistry
-}
-
-func (u UserService) CreateUser(ctx context.Context, request opendisc.CreateUserRequest) (*opendisc.User, error) {
-	var user opendisc.User
-
-	err := u.DB.QueryRow(ctx,
-		`INSERT INTO open_discord.users (nickname)
-		 VALUES ($1)
-		 RETURNING id, nickname`,
-		request.Nickname,
-	).Scan(&user.UserID, &user.Nickname)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &user, nil
 }
 
 func (u UserService) GetUserByID(ctx context.Context, userId uuid.UUID) (*opendisc.User, error) {

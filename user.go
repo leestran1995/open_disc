@@ -10,12 +10,3 @@ type User struct {
 	Username string    `json:"username"`
 	IsOnline bool      `json:"is_online"`
 }
-
-type CreateUserRequest struct {
-	Nickname string `json:"nickname"`
-}
-
-// RoomJoinRequest In the future the UserID should come as a header fromm the API Gateway
-type RoomJoinRequest struct {
-	UserID uuid.UUID `json:"user_id"`
-}

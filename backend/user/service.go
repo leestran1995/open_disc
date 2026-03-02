@@ -4,7 +4,6 @@ import (
 	"backend/logic"
 	"context"
 
-
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -12,13 +11,6 @@ import (
 type UserService struct {
 	DB             *pgxpool.Pool
 	ClientRegistry *logic.ClientRegistry
-}
-
-type User struct {
-	UserID   uuid.UUID `json:"user_id"`
-	Nickname string    `json:"nickname"`
-	Username string    `json:"username"`
-	IsOnline bool      `json:"is_online"`
 }
 
 func (u UserService) GetUserByID(ctx context.Context, userId uuid.UUID) (*User, error) {

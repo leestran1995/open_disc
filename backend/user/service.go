@@ -1,4 +1,4 @@
-package postgresql
+package user
 
 import (
 	"backend/logic"

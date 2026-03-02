@@ -1,14 +1,13 @@
-package http
+package user
 
 import (
-	"backend/postgresql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 type UserHandler struct {
-	UserService *postgresql.UserService
+	UserService *UserService
 }
 
 func BindUserRoutes(router *gin.Engine, handler *UserHandler) {

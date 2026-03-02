@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"os"
 
+	"backend/user"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -84,7 +86,7 @@ func main() {
 	}))
 	router.Use(http2.AuthMiddleware(&services.TokenService))
 
-	http2.BindUserRoutes(router, &handlers.UserHandler)
+	user.BindUserRoutes(router, &handlers.UserHandler)
 	http2.BindRoomRoutes(router, &handlers.RoomHandler)
 	http2.BindMessageRoutes(router, &handlers.MessagesHandler)
 	http2.BindAuthRoutes(router, &handlers.AuthHandler)

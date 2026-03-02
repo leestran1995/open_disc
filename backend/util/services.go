@@ -6,12 +6,13 @@ import (
 	"backend/logic"
 	postgresql2 "backend/postgresql"
 
+	"backend/user"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Services struct {
-	UsersService     postgresql2.UserService
+	UsersService     user.UserService
 	RoomsService     postgresql2.RoomService
 	AuthService      auth2.Service
 	TokenService     auth2.TokenService
@@ -24,9 +25,9 @@ func CreateServices(
 	rooms *map[uuid.UUID]*logic.Room,
 	clientRegistry *logic.ClientRegistry,
 ) *Services {
-	usersService := postgresql2.UserService{DB: db, ClientRegistry: clientRegistry}
+	usersService := user.UserService{DB: db, ClientRegistry: clientRegistry}
 	return &Services{
-		UsersService:     postgresql2.UserService{DB: db, ClientRegistry: clientRegistry},
+		UsersService:     usersService,
 		RoomsService:     postgresql2.RoomService{DB: db},
 		AuthService:      auth2.Service{DB: db},
 		TokenService:     auth2.TokenService{Secret: []byte(secret), UserService: &usersService},
@@ -36,7 +37,7 @@ func CreateServices(
 
 type Handlers struct {
 	AuthHandler        http2.AuthHandler
-	UserHandler        http2.UserHandler
+	UserHandler        user.UserHandler
 	RoomHandler        http2.RoomHandler
 	MessagesHandler    http2.MessageHandler
 	SseHandler         http2.SseHandler
@@ -49,7 +50,7 @@ func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room, client
 			Auth:  &services.AuthService,
 			Token: &services.TokenService,
 		},
-		UserHandler: http2.UserHandler{
+		UserHandler: user.UserHandler{
 			UserService: &services.UsersService,
 		},
 		RoomHandler: *http2.NewRoomHandler(

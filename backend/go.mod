@@ -1,4 +1,4 @@
-module open_discord
+module backend
 
 go 1.25
 

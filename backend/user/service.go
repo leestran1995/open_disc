@@ -1,10 +1,8 @@
-package postgresql
+package user
 
 import (
+	"backend/logic"
 	"context"
-	"open_discord/internal/logic"
-
-	opendisc "open_discord"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -15,8 +13,8 @@ type UserService struct {
 	ClientRegistry *logic.ClientRegistry
 }
 
-func (u UserService) GetUserByID(ctx context.Context, userId uuid.UUID) (*opendisc.User, error) {
-	var user opendisc.User
+func (u UserService) GetUserByID(ctx context.Context, userId uuid.UUID) (*User, error) {
+	var user User
 	row := u.DB.QueryRow(context.Background(), "select * from open_discord.users where id = $1", userId)
 
 	err := row.Scan(&user.UserID, &user.Nickname)
@@ -27,8 +25,8 @@ func (u UserService) GetUserByID(ctx context.Context, userId uuid.UUID) (*opendi
 	return &user, nil
 }
 
-func (u UserService) GetUserByUsername(ctx context.Context, username string) (*opendisc.User, error) {
-	var user opendisc.User
+func (u UserService) GetUserByUsername(ctx context.Context, username string) (*User, error) {
+	var user User
 	row := u.DB.QueryRow(context.Background(), "select id, nickname from open_discord.users where username = $1", username)
 
 	err := row.Scan(&user.UserID, &user.Nickname)
@@ -39,8 +37,8 @@ func (u UserService) GetUserByUsername(ctx context.Context, username string) (*o
 	return &user, nil
 }
 
-func (u UserService) GetAllUsers(ctx context.Context) ([]opendisc.User, error) {
-	var users []opendisc.User
+func (u UserService) GetAllUsers(ctx context.Context) ([]User, error) {
+	var users []User
 	rows, err := u.DB.Query(ctx, "select id, nickname, username from open_discord.users")
 
 	if err != nil {
@@ -49,7 +47,7 @@ func (u UserService) GetAllUsers(ctx context.Context) ([]opendisc.User, error) {
 
 	defer rows.Close()
 	for rows.Next() {
-		var user opendisc.User
+		var user User
 		err = rows.Scan(&user.UserID, &user.Nickname, &user.Username)
 		if err != nil {
 			return nil, err

@@ -1,9 +1,7 @@
-package postgresql
+package room
 
 import (
 	"context"
-
-	"open_discord"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -14,8 +12,8 @@ type RoomService struct {
 	DB *pgxpool.Pool
 }
 
-func (s RoomService) Create(ctx context.Context, request opendisc.CreateRoomRequest) (*opendisc.Room, error) {
-	var room opendisc.Room
+func (s RoomService) Create(ctx context.Context, request CreateRoomRequest) (*Room, error) {
+	var room Room
 
 	err := s.DB.QueryRow(ctx,
 		`INSERT INTO open_discord.rooms (name)
@@ -31,10 +29,10 @@ func (s RoomService) Create(ctx context.Context, request opendisc.CreateRoomRequ
 	return &room, nil
 }
 
-// GetAllRooms returns all rooms along with whether the calling user has starred them. If there is no calling user,
+// GetAll returns all rooms along with whether the calling user has starred them. If there is no calling user,
 // then userId will be null and we will mark all rooms as false (for the purposes of system calls)
-func (s RoomService) GetAllRooms(ctx context.Context, userId *uuid.UUID) ([]opendisc.Room, error) {
-	var rooms []opendisc.Room
+func (s RoomService) GetAll(ctx context.Context, userId *uuid.UUID) ([]Room, error) {
+	var rooms []Room
 	var sql string
 	var rows pgx.Rows
 	var err error
@@ -61,7 +59,7 @@ func (s RoomService) GetAllRooms(ctx context.Context, userId *uuid.UUID) ([]open
 	}
 
 	for hasNext {
-		var room opendisc.Room
+		var room Room
 		err := rows.Scan(&room.ID, &room.Name, &room.SortOrder, &room.Starred)
 		if err != nil {
 			return nil, err
@@ -73,7 +71,7 @@ func (s RoomService) GetAllRooms(ctx context.Context, userId *uuid.UUID) ([]open
 	return rooms, nil
 }
 
-func (s RoomService) ReorderRooms(ctx context.Context, req opendisc.SwapRoomOrderRequest) error {
+func (s RoomService) Reorder(ctx context.Context, req SwapRoomOrderRequest) error {
 	tx, err := s.DB.Begin(ctx)
 	if err != nil {
 		return err
@@ -91,7 +89,7 @@ func (s RoomService) ReorderRooms(ctx context.Context, req opendisc.SwapRoomOrde
 	return tx.Commit(ctx)
 }
 
-func (s RoomService) StarRoom(ctx context.Context, userUuid uuid.UUID, roomUuid uuid.UUID) error {
+func (s RoomService) Star(ctx context.Context, userUuid uuid.UUID, roomUuid uuid.UUID) error {
 	_, err := s.DB.Exec(ctx,
 		`insert into open_discord.user_room_stars(user_id, room_id) values ($1, $2)`,
 		userUuid, roomUuid)
@@ -101,7 +99,7 @@ func (s RoomService) StarRoom(ctx context.Context, userUuid uuid.UUID, roomUuid 
 	return nil
 }
 
-func (s RoomService) UnstarRoom(ctx context.Context, userUuid uuid.UUID, roomUuid uuid.UUID) error {
+func (s RoomService) Unstar(ctx context.Context, userUuid uuid.UUID, roomUuid uuid.UUID) error {
 	_, err := s.DB.Exec(ctx,
 		`delete from open_discord.user_room_stars where user_id = $1 and room_id = $2`, userUuid, roomUuid)
 	if err != nil {

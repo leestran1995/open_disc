@@ -4,16 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"open_discord/internal/postgresql"
 	"time"
 
+	"backend/user"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
 
 type TokenService struct {
 	Secret      []byte
-	UserService *postgresql.UserService
+	UserService *user.UserService
 }
 
 type Claims struct {

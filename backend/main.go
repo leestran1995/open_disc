@@ -1,16 +1,20 @@
 package main
 
 import (
+	"backend/auth"
+	"backend/cli"
+	http2 "backend/http"
+	"backend/logic"
+	"backend/room"
+	"backend/serverevent"
+	"backend/util"
 	"context"
 	"fmt"
 	"log"
 	"net/http"
-	"open_discord/internal/auth"
-	"open_discord/internal/cli"
-	http2 "open_discord/internal/http"
-	"open_discord/internal/logic"
-	"open_discord/internal/util"
 	"os"
+
+	"backend/user"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -60,7 +64,7 @@ func main() {
 	handlers := util.CreateHandlers(services, &rooms, &clientRegistry)
 
 	// Add all existing rooms to memory
-	allRooms, err := services.RoomsService.GetAllRooms(context.Background(), nil)
+	allRooms, err := services.RoomsService.GetAll(context.Background(), nil)
 	if err != nil {
 		log.Fatalf("Unable to get all rooms: %v\n", err)
 	}
@@ -82,16 +86,16 @@ func main() {
 		AllowHeaders:     []string{"Authorization", "Content-Type"},
 		AllowCredentials: true,
 	}))
-	router.Use(http2.AuthMiddleware(&services.TokenService))
+	router.Use(auth.AuthMiddleware(&services.TokenService))
 
-	http2.BindUserRoutes(router, &handlers.UserHandler)
-	http2.BindRoomRoutes(router, &handlers.RoomHandler)
+	user.BindUserRoutes(router, &handlers.UserHandler)
+	room.BindRoomRoutes(router, &handlers.RoomHandler)
 	http2.BindMessageRoutes(router, &handlers.MessagesHandler)
-	http2.BindAuthRoutes(router, &handlers.AuthHandler)
-	http2.BindServerEventRoutes(router, &handlers.ServerEventHandler)
+	auth.BindAuthRoutes(router, &handlers.AuthHandler)
+	serverevent.BindServerEventRoutes(router, &handlers.ServerEventHandler)
 	router.GET(
 		"/connect",
-		handlers.SseHandler.HandleGinSseConnection,
+		handlers.SseHandler.EstablishSSEConnection,
 	)
 	fmt.Println("Starting CLI")
 	otc := auth.Otc{DB: pool}

@@ -1,8 +1,7 @@
-package http
+package auth
 
 import (
 	"net/http"
-	auth2 "open_discord/internal/auth"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -10,8 +9,8 @@ import (
 )
 
 type AuthHandler struct {
-	Auth  *auth2.Service
-	Token *auth2.TokenService
+	Auth  *Service
+	Token *TokenService
 }
 
 type SignInRequest struct {
@@ -39,7 +38,6 @@ func BindAuthRoutes(router *gin.Engine, authHandler *AuthHandler) {
 	router.POST(signupRoute, authHandler.HandleSignUp)
 	router.POST(checkPasswordRoute, authHandler.CheckPassword)
 	router.POST(changePasswordRoute, authHandler.ChangePassword)
-
 }
 
 func (h *AuthHandler) HandleSignIn(c *gin.Context) {
@@ -92,7 +90,7 @@ func (h *AuthHandler) CheckPassword(c *gin.Context) {
 		return
 	}
 
-	result := auth2.CheckPasswordStrength(req.Password)
+	result := CheckPasswordStrength(req.Password)
 
 	c.JSON(http.StatusOK, gin.H{"data": result})
 }
@@ -113,7 +111,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": "ok"})
 }
 
-func AuthMiddleware(t *auth2.TokenService) gin.HandlerFunc {
+func AuthMiddleware(t *TokenService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := c.FullPath()
 

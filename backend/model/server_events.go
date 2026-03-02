@@ -1,4 +1,4 @@
-package opendisc
+package model
 
 import (
 	"time"

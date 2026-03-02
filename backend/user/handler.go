@@ -1,14 +1,13 @@
-package http
+package user
 
 import (
 	"net/http"
-	"open_discord/internal/postgresql"
 
 	"github.com/gin-gonic/gin"
 )
 
 type UserHandler struct {
-	UserService *postgresql.UserService
+	UserService *UserService
 }
 
 func BindUserRoutes(router *gin.Engine, handler *UserHandler) {

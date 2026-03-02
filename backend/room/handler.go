@@ -1,27 +1,27 @@
-package http
+package room
 
 import (
+	"backend/logic"
+	"backend/model"
+	"backend/serverevent"
 	"net/http"
-	opendisc "open_discord"
-	"open_discord/internal/logic"
-	"open_discord/internal/postgresql"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type RoomHandler struct {
-	RoomService      *postgresql.RoomService
+	RoomService      *RoomService
 	Rooms            *map[uuid.UUID]*logic.Room
 	ClientRegistry   *logic.ClientRegistry
-	ServerEventStore *postgresql.ServerEventStore
+	ServerEventStore *serverevent.ServerEventStore
 }
 
 func NewRoomHandler(
-	roomService *postgresql.RoomService,
+	roomService *RoomService,
 	Rooms *map[uuid.UUID]*logic.Room,
 	ClientRegistry *logic.ClientRegistry,
-	serverEventStore *postgresql.ServerEventStore,
+	serverEventStore *serverevent.ServerEventStore,
 ) *RoomHandler {
 	return &RoomHandler{
 		RoomService:      roomService,
@@ -40,7 +40,7 @@ func BindRoomRoutes(router *gin.Engine, RoomHandler *RoomHandler) {
 }
 
 func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
-	var request opendisc.CreateRoomRequest
+	var request CreateRoomRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -59,12 +59,12 @@ func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
 		Name:           u.Name,
 	}
 
-	roomCreatedEvent := opendisc.ServerEvent{
-		ServerEventType: opendisc.RoomCreated,
+	roomCreatedEvent := model.ServerEvent{
+		ServerEventType: model.RoomCreated,
 		Payload:         u.Name,
 	}
 
-	h.ServerEventStore.Create(c, opendisc.RoomCreated, u)
+	h.ServerEventStore.Create(c, model.RoomCreated, u)
 	// This should be in the service layer, alas
 	h.ClientRegistry.FanOutMessage(roomCreatedEvent)
 
@@ -72,13 +72,13 @@ func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
 }
 
 func (h *RoomHandler) HandleSwapRoomOrder(c *gin.Context) {
-	var req opendisc.SwapRoomOrderRequest
+	var req SwapRoomOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err := h.RoomService.ReorderRooms(c.Request.Context(), req)
+	err := h.RoomService.Reorder(c.Request.Context(), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -95,7 +95,7 @@ func (h *RoomHandler) HandleGetAllRooms(c *gin.Context) {
 	}
 	asUuid := userId.(uuid.UUID)
 
-	res, err := h.RoomService.GetAllRooms(c, &asUuid)
+	res, err := h.RoomService.GetAll(c, &asUuid)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -128,12 +128,12 @@ func (h *RoomHandler) HandleStarRoom(c *gin.Context) {
 
 	switch methodType {
 	case "PUT":
-		err := h.RoomService.StarRoom(c, userUuid.(uuid.UUID), roomUuid)
+		err := h.RoomService.Star(c, userUuid.(uuid.UUID), roomUuid)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 	case "DELETE":
-		err := h.RoomService.UnstarRoom(c, userUuid.(uuid.UUID), roomUuid)
+		err := h.RoomService.Unstar(c, userUuid.(uuid.UUID), roomUuid)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}

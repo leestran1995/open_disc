@@ -1,8 +1,8 @@
 package logic
 
 import (
+	"backend/model"
 	"encoding/json"
-	opendisc "open_discord"
 
 	"github.com/google/uuid"
 )
@@ -13,7 +13,7 @@ import (
 type RoomClient struct {
 	Username    string
 	Nickname    string
-	SendChannel chan opendisc.ServerEvent
+	SendChannel chan model.ServerEvent
 }
 
 // Room represents a single room active on the server
@@ -26,14 +26,14 @@ type Room struct {
 	Name           string
 }
 
-func (r *Room) Send(message opendisc.Message) error {
+func (r *Room) Send(message model.Message) error {
 	asJson, err := json.Marshal(message)
 	if err != nil {
 		return err
 	}
 
-	roomEvent := opendisc.ServerEvent{
-		ServerEventType: opendisc.NewMessage,
+	roomEvent := model.ServerEvent{
+		ServerEventType: model.NewMessage,
 		Payload:         asJson,
 	}
 

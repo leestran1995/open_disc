@@ -1,9 +1,9 @@
 package cli
 
 import (
+	"backend/auth"
 	"bufio"
 	"fmt"
-	"open_discord/internal/auth"
 	"os"
 	"strings"
 )

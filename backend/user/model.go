@@ -1,8 +1,6 @@
-package opendisc
+package user
 
-import (
-	"github.com/google/uuid"
-)
+import "github.com/google/uuid"
 
 type User struct {
 	UserID   uuid.UUID `json:"user_id"`

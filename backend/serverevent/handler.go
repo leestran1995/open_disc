@@ -1,15 +1,14 @@
-package http
+package serverevent
 
 import (
 	"net/http"
-	"open_discord/internal/postgresql"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ServerEventHandler struct {
-	ServerEventStore postgresql.ServerEventStore
+	ServerEventStore ServerEventStore
 }
 
 func BindServerEventRoutes(router *gin.Engine, serverEventHandler *ServerEventHandler) {

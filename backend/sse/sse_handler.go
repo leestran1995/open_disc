@@ -1,30 +1,29 @@
-package http
+package sse
 
 import (
+	"backend/auth"
+	"backend/logic"
+	"backend/model"
+	"backend/room"
 	"log/slog"
-	opendisc "open_discord"
-	"open_discord/internal/auth"
-	"open_discord/internal/logic"
-	postgresql2 "open_discord/internal/postgresql"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type SseHandler struct {
-	RoomService    *postgresql2.RoomService
-	MessageService *postgresql2.MessageService
+	RoomService    *room.RoomService
 	Rooms          *map[uuid.UUID]*logic.Room
 	TokenService   *auth.TokenService
 	ClientRegistry *logic.ClientRegistry
 }
 
-func (s *SseHandler) HandleGinSseConnection(c *gin.Context) {
+func (s *SseHandler) EstablishSSEConnection(c *gin.Context) {
 
 	slog.Info("Establishing new client connection")
 
 	username := c.GetString("username")
-	sendChannel := make(chan opendisc.ServerEvent, 50)
+	sendChannel := make(chan model.ServerEvent, 50)
 
 	roomClient := logic.RoomClient{
 		Username:    username,

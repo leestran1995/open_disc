@@ -1,4 +1,4 @@
-package domain
+package room
 
 import "github.com/google/uuid"
 

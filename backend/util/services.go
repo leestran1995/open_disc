@@ -1,22 +1,25 @@
 package util
 
 import (
-	auth2 "backend/auth"
+	auth "backend/auth"
 	http2 "backend/http"
 	"backend/logic"
-	postgresql2 "backend/postgresql"
+	"backend/serverevent"
+	"backend/sse"
 
+	"backend/room"
 	"backend/user"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Services struct {
 	UsersService     user.UserService
-	RoomsService     postgresql2.RoomService
-	AuthService      auth2.Service
-	TokenService     auth2.TokenService
-	ServerEventStore postgresql2.ServerEventStore
+	RoomsService     room.RoomService
+	AuthService      auth.Service
+	TokenService     auth.TokenService
+	ServerEventStore serverevent.ServerEventStore
 }
 
 func CreateServices(
@@ -28,32 +31,32 @@ func CreateServices(
 	usersService := user.UserService{DB: db, ClientRegistry: clientRegistry}
 	return &Services{
 		UsersService:     usersService,
-		RoomsService:     postgresql2.RoomService{DB: db},
-		AuthService:      auth2.Service{DB: db},
-		TokenService:     auth2.TokenService{Secret: []byte(secret), UserService: &usersService},
-		ServerEventStore: postgresql2.ServerEventStore{DB: db, ClientRegistry: clientRegistry},
+		RoomsService:     room.RoomService{DB: db},
+		AuthService:      auth.Service{DB: db},
+		TokenService:     auth.TokenService{Secret: []byte(secret), UserService: &usersService},
+		ServerEventStore: serverevent.ServerEventStore{DB: db, ClientRegistry: clientRegistry},
 	}
 }
 
 type Handlers struct {
-	AuthHandler        http2.AuthHandler
+	AuthHandler        auth.AuthHandler
 	UserHandler        user.UserHandler
-	RoomHandler        http2.RoomHandler
+	RoomHandler        room.RoomHandler
 	MessagesHandler    http2.MessageHandler
-	SseHandler         http2.SseHandler
-	ServerEventHandler http2.ServerEventHandler
+	SseHandler         sse.SseHandler
+	ServerEventHandler serverevent.ServerEventHandler
 }
 
 func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room, clientRegistry *logic.ClientRegistry) *Handlers {
 	return &Handlers{
-		AuthHandler: http2.AuthHandler{
+		AuthHandler: auth.AuthHandler{
 			Auth:  &services.AuthService,
 			Token: &services.TokenService,
 		},
 		UserHandler: user.UserHandler{
 			UserService: &services.UsersService,
 		},
-		RoomHandler: *http2.NewRoomHandler(
+		RoomHandler: *room.NewRoomHandler(
 			&services.RoomsService,
 			rooms,
 			clientRegistry,
@@ -62,13 +65,13 @@ func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room, client
 		MessagesHandler: http2.MessageHandler{
 			ServerEventStore: services.ServerEventStore,
 		},
-		SseHandler: http2.SseHandler{
+		SseHandler: sse.SseHandler{
 			RoomService:    &services.RoomsService,
 			Rooms:          rooms,
 			TokenService:   &services.TokenService,
 			ClientRegistry: clientRegistry,
 		},
-		ServerEventHandler: http2.ServerEventHandler{
+		ServerEventHandler: serverevent.ServerEventHandler{
 			ServerEventStore: services.ServerEventStore,
 		},
 	}

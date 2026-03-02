@@ -1,8 +1,8 @@
-package postgresql
+package serverevent
 
 import (
-	"backend/domain"
 	"backend/logic"
+	"backend/model"
 	"context"
 	"encoding/json"
 
@@ -14,8 +14,8 @@ type ServerEventStore struct {
 	ClientRegistry *logic.ClientRegistry
 }
 
-func (s ServerEventStore) Create(ctx context.Context, eventType domain.ServerEventType, payload any) (*domain.ServerEvent, error) {
-	var serverEvent domain.ServerEvent
+func (s ServerEventStore) Create(ctx context.Context, eventType model.ServerEventType, payload any) (*model.ServerEvent, error) {
+	var serverEvent model.ServerEvent
 	var payloadBytes []byte
 	var payloadJson json.RawMessage
 
@@ -39,8 +39,8 @@ func (s ServerEventStore) Create(ctx context.Context, eventType domain.ServerEve
 
 // GetServerEventsByEventOrder retrieves server events by their integer event order, to a limit of 20. If neither bound is provided it will
 // get the most recent events first.
-func (s ServerEventStore) GetServerEventsByEventOrder(ctx context.Context, eventOrderStart *int, eventOrderEnd *int) ([]*domain.ServerEvent, error) {
-	var messages []*domain.ServerEvent
+func (s ServerEventStore) GetServerEventsByEventOrder(ctx context.Context, eventOrderStart *int, eventOrderEnd *int) ([]*model.ServerEvent, error) {
+	var messages []*model.ServerEvent
 
 	rows, err := s.DB.Query(ctx,
 		`select id, event_type, payload, timestamp, event_order from open_discord.server_events
@@ -53,7 +53,7 @@ func (s ServerEventStore) GetServerEventsByEventOrder(ctx context.Context, event
 	}
 
 	for rows.Next() {
-		var message domain.ServerEvent
+		var message model.ServerEvent
 		rows.Scan(&message.ServerEventID, &message.ServerEventType, &message.Payload, &message.ServerEventTime, &message.ServerEventOrder)
 		messages = append(messages, &message)
 	}

@@ -1,8 +1,8 @@
 package http
 
 import (
-	"backend/domain"
-	"backend/postgresql"
+	"backend/model"
+	"backend/serverevent"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,7 +10,7 @@ import (
 )
 
 type MessageHandler struct {
-	ServerEventStore postgresql.ServerEventStore
+	ServerEventStore serverevent.ServerEventStore
 }
 
 func BindMessageRoutes(router *gin.Engine, messageHandler *MessageHandler) {
@@ -19,7 +19,7 @@ func BindMessageRoutes(router *gin.Engine, messageHandler *MessageHandler) {
 
 func (h *MessageHandler) HandleCreateMessage(c *gin.Context) {
 	// Get request body
-	var request *domain.MessageCreateRequest
+	var request *model.MessageCreateRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -31,13 +31,13 @@ func (h *MessageHandler) HandleCreateMessage(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
-	newRequest := domain.MessageCreateRequest{
+	newRequest := model.MessageCreateRequest{
 		UserID:  userId.(uuid.UUID),
 		RoomID:  request.RoomID,
 		Message: request.Message,
 	}
 
-	serverEvent, err := h.ServerEventStore.Create(c, domain.NewMessage, newRequest)
+	serverEvent, err := h.ServerEventStore.Create(c, model.NewMessage, newRequest)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}

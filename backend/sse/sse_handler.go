@@ -1,10 +1,10 @@
-package http
+package sse
 
 import (
 	"backend/auth"
-	"backend/domain"
 	"backend/logic"
-	postgresql2 "backend/postgresql"
+	"backend/model"
+	"backend/room"
 	"log/slog"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +12,7 @@ import (
 )
 
 type SseHandler struct {
-	RoomService    *postgresql2.RoomService
+	RoomService    *room.RoomService
 	Rooms          *map[uuid.UUID]*logic.Room
 	TokenService   *auth.TokenService
 	ClientRegistry *logic.ClientRegistry
@@ -23,7 +23,7 @@ func (s *SseHandler) EstablishSSEConnection(c *gin.Context) {
 	slog.Info("Establishing new client connection")
 
 	username := c.GetString("username")
-	sendChannel := make(chan domain.ServerEvent, 50)
+	sendChannel := make(chan model.ServerEvent, 50)
 
 	roomClient := logic.RoomClient{
 		Username:    username,

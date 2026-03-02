@@ -1,7 +1,6 @@
-package http
+package auth
 
 import (
-	auth2 "backend/auth"
 	"net/http"
 	"strings"
 
@@ -10,8 +9,8 @@ import (
 )
 
 type AuthHandler struct {
-	Auth  *auth2.Service
-	Token *auth2.TokenService
+	Auth  *Service
+	Token *TokenService
 }
 
 type SignInRequest struct {
@@ -91,7 +90,7 @@ func (h *AuthHandler) CheckPassword(c *gin.Context) {
 		return
 	}
 
-	result := auth2.CheckPasswordStrength(req.Password)
+	result := CheckPasswordStrength(req.Password)
 
 	c.JSON(http.StatusOK, gin.H{"data": result})
 }
@@ -112,7 +111,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": "ok"})
 }
 
-func AuthMiddleware(t *auth2.TokenService) gin.HandlerFunc {
+func AuthMiddleware(t *TokenService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := c.FullPath()
 

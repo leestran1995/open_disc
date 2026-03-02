@@ -5,6 +5,8 @@ import (
 	"backend/cli"
 	http2 "backend/http"
 	"backend/logic"
+	"backend/room"
+	"backend/serverevent"
 	"backend/util"
 	"context"
 	"fmt"
@@ -84,13 +86,13 @@ func main() {
 		AllowHeaders:     []string{"Authorization", "Content-Type"},
 		AllowCredentials: true,
 	}))
-	router.Use(http2.AuthMiddleware(&services.TokenService))
+	router.Use(auth.AuthMiddleware(&services.TokenService))
 
 	user.BindUserRoutes(router, &handlers.UserHandler)
-	http2.BindRoomRoutes(router, &handlers.RoomHandler)
+	room.BindRoomRoutes(router, &handlers.RoomHandler)
 	http2.BindMessageRoutes(router, &handlers.MessagesHandler)
-	http2.BindAuthRoutes(router, &handlers.AuthHandler)
-	http2.BindServerEventRoutes(router, &handlers.ServerEventHandler)
+	auth.BindAuthRoutes(router, &handlers.AuthHandler)
+	serverevent.BindServerEventRoutes(router, &handlers.ServerEventHandler)
 	router.GET(
 		"/connect",
 		handlers.SseHandler.EstablishSSEConnection,

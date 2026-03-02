@@ -1,9 +1,9 @@
-package http
+package room
 
 import (
-	"backend/domain"
 	"backend/logic"
-	"backend/postgresql"
+	"backend/model"
+	"backend/serverevent"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,17 +11,17 @@ import (
 )
 
 type RoomHandler struct {
-	RoomService      *postgresql.RoomService
+	RoomService      *RoomService
 	Rooms            *map[uuid.UUID]*logic.Room
 	ClientRegistry   *logic.ClientRegistry
-	ServerEventStore *postgresql.ServerEventStore
+	ServerEventStore *serverevent.ServerEventStore
 }
 
 func NewRoomHandler(
-	roomService *postgresql.RoomService,
+	roomService *RoomService,
 	Rooms *map[uuid.UUID]*logic.Room,
 	ClientRegistry *logic.ClientRegistry,
-	serverEventStore *postgresql.ServerEventStore,
+	serverEventStore *serverevent.ServerEventStore,
 ) *RoomHandler {
 	return &RoomHandler{
 		RoomService:      roomService,
@@ -40,7 +40,7 @@ func BindRoomRoutes(router *gin.Engine, RoomHandler *RoomHandler) {
 }
 
 func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
-	var request domain.CreateRoomRequest
+	var request CreateRoomRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -59,12 +59,12 @@ func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
 		Name:           u.Name,
 	}
 
-	roomCreatedEvent := domain.ServerEvent{
-		ServerEventType: domain.RoomCreated,
+	roomCreatedEvent := model.ServerEvent{
+		ServerEventType: model.RoomCreated,
 		Payload:         u.Name,
 	}
 
-	h.ServerEventStore.Create(c, domain.RoomCreated, u)
+	h.ServerEventStore.Create(c, model.RoomCreated, u)
 	// This should be in the service layer, alas
 	h.ClientRegistry.FanOutMessage(roomCreatedEvent)
 
@@ -72,7 +72,7 @@ func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
 }
 
 func (h *RoomHandler) HandleSwapRoomOrder(c *gin.Context) {
-	var req domain.SwapRoomOrderRequest
+	var req SwapRoomOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

@@ -1,7 +1,6 @@
-package http
+package serverevent
 
 import (
-	"backend/postgresql"
 	"net/http"
 	"strconv"
 
@@ -9,7 +8,7 @@ import (
 )
 
 type ServerEventHandler struct {
-	ServerEventStore postgresql.ServerEventStore
+	ServerEventStore ServerEventStore
 }
 
 func BindServerEventRoutes(router *gin.Engine, serverEventHandler *ServerEventHandler) {

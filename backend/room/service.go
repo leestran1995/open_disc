@@ -1,9 +1,7 @@
-package postgresql
+package room
 
 import (
 	"context"
-
-	"backend/domain"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -14,8 +12,8 @@ type RoomService struct {
 	DB *pgxpool.Pool
 }
 
-func (s RoomService) Create(ctx context.Context, request domain.CreateRoomRequest) (*domain.Room, error) {
-	var room domain.Room
+func (s RoomService) Create(ctx context.Context, request CreateRoomRequest) (*Room, error) {
+	var room Room
 
 	err := s.DB.QueryRow(ctx,
 		`INSERT INTO open_discord.rooms (name)
@@ -33,8 +31,8 @@ func (s RoomService) Create(ctx context.Context, request domain.CreateRoomReques
 
 // GetAll returns all rooms along with whether the calling user has starred them. If there is no calling user,
 // then userId will be null and we will mark all rooms as false (for the purposes of system calls)
-func (s RoomService) GetAll(ctx context.Context, userId *uuid.UUID) ([]domain.Room, error) {
-	var rooms []domain.Room
+func (s RoomService) GetAll(ctx context.Context, userId *uuid.UUID) ([]Room, error) {
+	var rooms []Room
 	var sql string
 	var rows pgx.Rows
 	var err error
@@ -61,7 +59,7 @@ func (s RoomService) GetAll(ctx context.Context, userId *uuid.UUID) ([]domain.Ro
 	}
 
 	for hasNext {
-		var room domain.Room
+		var room Room
 		err := rows.Scan(&room.ID, &room.Name, &room.SortOrder, &room.Starred)
 		if err != nil {
 			return nil, err
@@ -73,7 +71,7 @@ func (s RoomService) GetAll(ctx context.Context, userId *uuid.UUID) ([]domain.Ro
 	return rooms, nil
 }
 
-func (s RoomService) Reorder(ctx context.Context, req domain.SwapRoomOrderRequest) error {
+func (s RoomService) Reorder(ctx context.Context, req SwapRoomOrderRequest) error {
 	tx, err := s.DB.Begin(ctx)
 	if err != nil {
 		return err

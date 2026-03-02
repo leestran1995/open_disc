@@ -1,8 +1,6 @@
 package logic
 
-import (
-	"backend/domain"
-)
+import "backend/model"
 
 type ClientRegistry struct {
 	Clients *map[string]*RoomClient
@@ -10,8 +8,8 @@ type ClientRegistry struct {
 
 func (c *ClientRegistry) Connect(rc *RoomClient) {
 	(*c.Clients)[rc.Username] = rc
-	connectEvent := domain.ServerEvent{
-		ServerEventType: domain.UserJoined,
+	connectEvent := model.ServerEvent{
+		ServerEventType: model.UserJoined,
 		Payload:         rc.Username,
 	}
 
@@ -21,8 +19,8 @@ func (c *ClientRegistry) Connect(rc *RoomClient) {
 func (c *ClientRegistry) Disconnect(rc RoomClient) {
 	delete(*c.Clients, rc.Username)
 
-	disconnectEvent := domain.ServerEvent{
-		ServerEventType: domain.UserLeft,
+	disconnectEvent := model.ServerEvent{
+		ServerEventType: model.UserLeft,
 		Payload:         rc.Username,
 	}
 
@@ -33,7 +31,7 @@ func (c *ClientRegistry) IsOnline(username string) bool {
 	return (*c.Clients)[username] != nil
 }
 
-func (c *ClientRegistry) FanOutMessage(message domain.ServerEvent) {
+func (c *ClientRegistry) FanOutMessage(message model.ServerEvent) {
 	for _, rc := range *c.Clients {
 		rc.SendChannel <- message
 	}

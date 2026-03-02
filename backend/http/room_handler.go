@@ -78,7 +78,7 @@ func (h *RoomHandler) HandleSwapRoomOrder(c *gin.Context) {
 		return
 	}
 
-	err := h.RoomService.ReorderRooms(c.Request.Context(), req)
+	err := h.RoomService.Reorder(c.Request.Context(), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -95,7 +95,7 @@ func (h *RoomHandler) HandleGetAllRooms(c *gin.Context) {
 	}
 	asUuid := userId.(uuid.UUID)
 
-	res, err := h.RoomService.GetAllRooms(c, &asUuid)
+	res, err := h.RoomService.GetAll(c, &asUuid)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -128,12 +128,12 @@ func (h *RoomHandler) HandleStarRoom(c *gin.Context) {
 
 	switch methodType {
 	case "PUT":
-		err := h.RoomService.StarRoom(c, userUuid.(uuid.UUID), roomUuid)
+		err := h.RoomService.Star(c, userUuid.(uuid.UUID), roomUuid)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 	case "DELETE":
-		err := h.RoomService.UnstarRoom(c, userUuid.(uuid.UUID), roomUuid)
+		err := h.RoomService.Unstar(c, userUuid.(uuid.UUID), roomUuid)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}

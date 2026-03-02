@@ -37,6 +37,8 @@ func (s ServerEventStore) Create(ctx context.Context, eventType domain.ServerEve
 	return &serverEvent, nil
 }
 
+// GetServerEventsByEventOrder retrieves server events by their integer event order, to a limit of 20. If neither bound is provided it will
+// get the most recent events first.
 func (s ServerEventStore) GetServerEventsByEventOrder(ctx context.Context, eventOrderStart *int, eventOrderEnd *int) ([]*domain.ServerEvent, error) {
 	var messages []*domain.ServerEvent
 
@@ -45,7 +47,7 @@ func (s ServerEventStore) GetServerEventsByEventOrder(ctx context.Context, event
 				where ($1::int is null or event_order >= $1::int)
 				and ($2::int is null or event_order <= $2::int)
 				order by event_order desc 
-				limit 10`, eventOrderStart, eventOrderEnd)
+				limit 20`, eventOrderStart, eventOrderEnd)
 	if err != nil {
 		return nil, err
 	}

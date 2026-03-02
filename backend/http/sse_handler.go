@@ -2,10 +2,10 @@ package http
 
 import (
 	"backend/auth"
+	"backend/domain"
 	"backend/logic"
 	postgresql2 "backend/postgresql"
 	"log/slog"
-    "backend/domain"	
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -13,13 +13,12 @@ import (
 
 type SseHandler struct {
 	RoomService    *postgresql2.RoomService
-	MessageService *postgresql2.MessageService
 	Rooms          *map[uuid.UUID]*logic.Room
 	TokenService   *auth.TokenService
 	ClientRegistry *logic.ClientRegistry
 }
 
-func (s *SseHandler) HandleGinSseConnection(c *gin.Context) {
+func (s *SseHandler) EstablishSSEConnection(c *gin.Context) {
 
 	slog.Info("Establishing new client connection")
 

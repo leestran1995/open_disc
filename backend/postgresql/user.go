@@ -4,7 +4,6 @@ import (
 	"backend/logic"
 	"context"
 
-	"backend/domain"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -15,8 +14,15 @@ type UserService struct {
 	ClientRegistry *logic.ClientRegistry
 }
 
-func (u UserService) GetUserByID(ctx context.Context, userId uuid.UUID) (*domain.User, error) {
-	var user domain.User
+type User struct {
+	UserID   uuid.UUID `json:"user_id"`
+	Nickname string    `json:"nickname"`
+	Username string    `json:"username"`
+	IsOnline bool      `json:"is_online"`
+}
+
+func (u UserService) GetUserByID(ctx context.Context, userId uuid.UUID) (*User, error) {
+	var user User
 	row := u.DB.QueryRow(context.Background(), "select * from open_discord.users where id = $1", userId)
 
 	err := row.Scan(&user.UserID, &user.Nickname)
@@ -27,8 +33,8 @@ func (u UserService) GetUserByID(ctx context.Context, userId uuid.UUID) (*domain
 	return &user, nil
 }
 
-func (u UserService) GetUserByUsername(ctx context.Context, username string) (*domain.User, error) {
-	var user domain.User
+func (u UserService) GetUserByUsername(ctx context.Context, username string) (*User, error) {
+	var user User
 	row := u.DB.QueryRow(context.Background(), "select id, nickname from open_discord.users where username = $1", username)
 
 	err := row.Scan(&user.UserID, &user.Nickname)
@@ -39,8 +45,8 @@ func (u UserService) GetUserByUsername(ctx context.Context, username string) (*d
 	return &user, nil
 }
 
-func (u UserService) GetAllUsers(ctx context.Context) ([]domain.User, error) {
-	var users []domain.User
+func (u UserService) GetAllUsers(ctx context.Context) ([]User, error) {
+	var users []User
 	rows, err := u.DB.Query(ctx, "select id, nickname, username from open_discord.users")
 
 	if err != nil {
@@ -49,7 +55,7 @@ func (u UserService) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 
 	defer rows.Close()
 	for rows.Next() {
-		var user domain.User
+		var user User
 		err = rows.Scan(&user.UserID, &user.Nickname, &user.Username)
 		if err != nil {
 			return nil, err

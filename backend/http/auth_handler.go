@@ -39,7 +39,6 @@ func BindAuthRoutes(router *gin.Engine, authHandler *AuthHandler) {
 	router.POST(signupRoute, authHandler.HandleSignUp)
 	router.POST(checkPasswordRoute, authHandler.CheckPassword)
 	router.POST(changePasswordRoute, authHandler.ChangePassword)
-
 }
 
 func (h *AuthHandler) HandleSignIn(c *gin.Context) {

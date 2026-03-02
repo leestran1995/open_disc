@@ -13,7 +13,6 @@ import (
 type Services struct {
 	UsersService     postgresql2.UserService
 	RoomsService     postgresql2.RoomService
-	MessagesService  postgresql2.MessageService
 	AuthService      auth2.Service
 	TokenService     auth2.TokenService
 	ServerEventStore postgresql2.ServerEventStore
@@ -29,7 +28,6 @@ func CreateServices(
 	return &Services{
 		UsersService:     postgresql2.UserService{DB: db, ClientRegistry: clientRegistry},
 		RoomsService:     postgresql2.RoomService{DB: db},
-		MessagesService:  postgresql2.MessageService{DB: db, ClientRegistry: clientRegistry},
 		AuthService:      auth2.Service{DB: db},
 		TokenService:     auth2.TokenService{Secret: []byte(secret), UserService: &usersService},
 		ServerEventStore: postgresql2.ServerEventStore{DB: db, ClientRegistry: clientRegistry},
@@ -61,12 +59,10 @@ func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room, client
 			&services.ServerEventStore,
 		),
 		MessagesHandler: http2.MessageHandler{
-			MessageService:   services.MessagesService,
 			ServerEventStore: services.ServerEventStore,
 		},
 		SseHandler: http2.SseHandler{
 			RoomService:    &services.RoomsService,
-			MessageService: &services.MessagesService,
 			Rooms:          rooms,
 			TokenService:   &services.TokenService,
 			ClientRegistry: clientRegistry,

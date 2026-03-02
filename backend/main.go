@@ -60,7 +60,7 @@ func main() {
 	handlers := util.CreateHandlers(services, &rooms, &clientRegistry)
 
 	// Add all existing rooms to memory
-	allRooms, err := services.RoomsService.GetAllRooms(context.Background(), nil)
+	allRooms, err := services.RoomsService.GetAll(context.Background(), nil)
 	if err != nil {
 		log.Fatalf("Unable to get all rooms: %v\n", err)
 	}
@@ -91,7 +91,7 @@ func main() {
 	http2.BindServerEventRoutes(router, &handlers.ServerEventHandler)
 	router.GET(
 		"/connect",
-		handlers.SseHandler.HandleGinSseConnection,
+		handlers.SseHandler.EstablishSSEConnection,
 	)
 	fmt.Println("Starting CLI")
 	otc := auth.Otc{DB: pool}

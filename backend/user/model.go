@@ -7,4 +7,5 @@ type User struct {
 	Nickname string    `json:"nickname"`
 	Username string    `json:"username"`
 	IsOnline bool      `json:"is_online"`
+	Roles    []string  `json:"roles"`
 }

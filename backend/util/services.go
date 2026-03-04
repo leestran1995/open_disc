@@ -49,10 +49,7 @@ type Handlers struct {
 
 func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room, clientRegistry *logic.ClientRegistry) *Handlers {
 	return &Handlers{
-		AuthHandler: auth.AuthHandler{
-			Auth:  &services.AuthService,
-			Token: &services.TokenService,
-		},
+		AuthHandler: *auth.NewAuthHandler(&services.AuthService, &services.TokenService, &services.UsersService),
 		UserHandler: user.UserHandler{
 			UserService: &services.UsersService,
 		},

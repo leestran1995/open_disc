@@ -24,7 +24,7 @@ echo "Moving to backend root"
 cd "$BACKEND_DIR"
 
 echo "Building backend executable"
-go build internal/main/main.go
+go build backend/main.go
 
 echo "Running backend"
 ./main

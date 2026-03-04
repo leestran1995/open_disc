@@ -16,7 +16,7 @@ func TestCheckPasswordStrengthValidPassword(t *testing.T) {
 		HasEightChars: true,
 	}
 
-	if got := CheckPasswordStrength(validPassword); cmp.Equal(got, want) {
+	if got := CheckPasswordStrength(validPassword); !cmp.Equal(got, want) {
 		t.Errorf("CheckPasswordStrength(%v) = %v, want %v", validPassword, got, want)
 	}
 	

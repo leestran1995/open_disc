@@ -61,3 +61,8 @@ func (u UserService) GetAllUsers(ctx context.Context) ([]User, error) {
 	}
 	return users, nil
 }
+
+func (u UserService) assignUserToRole(ctx context.Context, userId uuid.UUID, roleId uuid.UUID) error {
+	_, err := u.DB.Exec(ctx, "insert into open_discord.user_roles(user_id, role_id) values ($1, $2)", userId, roleId)
+	return err
+}

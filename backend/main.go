@@ -5,6 +5,7 @@ import (
 	"backend/cli"
 	http2 "backend/http"
 	"backend/logic"
+	"backend/role"
 	"backend/room"
 	"backend/serverevent"
 	"backend/util"
@@ -99,7 +100,8 @@ func main() {
 	)
 	fmt.Println("Starting CLI")
 	otc := auth.Otc{DB: pool}
-	cli := cli.Cli{Otc: &otc}
+	roleService := role.Service{DB: pool}
+	cli := cli.Cli{Otc: &otc, RoleService: &roleService}
 	go cli.Run()
 	router.Run(":8080")
 }

@@ -184,7 +184,7 @@ func (s *Service) ChangePassword(username, oldPassword, newPassword string) erro
 
 	// Update the user's password in the database
 	_, err = s.DB.Exec(context.Background(),
-		`update open_discord.users u set u.password = $1 where u.username = $2`, newPasswordHash, username)
+		`update open_discord.users set password = $1 where username = $2`, newPasswordHash, username)
 
 	return err
 }

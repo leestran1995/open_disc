@@ -14,19 +14,49 @@ type RoomService struct {
 }
 
 func (s RoomService) Create(ctx context.Context, request CreateRoomRequest) (*Room, error) {
+	slog.Info("Creating new room",
+		slog.String("room name", request.Name),
+	)
+
+	tx, err := s.DB.Begin(ctx)
+	if err != nil {
+		slog.Warn("Failed to begin transaction for creating room",
+			slog.String("roomName", request.Name),
+			slog.String("error", err.Error()),
+		)
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
 	var room Room
 
-	err := s.DB.QueryRow(ctx,
+	// Insert room
+	err = tx.QueryRow(ctx,
 		`INSERT INTO open_discord.rooms (name)
 		 VALUES ($1)
 		 RETURNING id, name, sort_order`,
 		request.Name,
 	).Scan(&room.ID, &room.Name, &room.SortOrder)
 
+	// Fetch and assign default role to room
+	slog.Info("Assigning default role to room",
+		slog.String("room name", request.Name),
+	)
+	var defaultRoleId uuid.UUID
+	err = tx.QueryRow(ctx,
+		`select id from open_discord.roles where name = 'default'`).Scan(&defaultRoleId)
 	if err != nil {
+		slog.Warn("Failed to find default role for new room",
+			slog.String("roomName", request.Name),
+			slog.String("error", err.Error()),
+		)
 		return nil, err
 	}
 
+	_, err = tx.Exec(ctx, `insert into open_discord.room_roles (room_id, role_id) values ($1, $2)`, room.ID, defaultRoleId)
+	if err != nil {
+		return nil, err
+	}
+	tx.Commit(ctx)
 	return &room, nil
 }
 

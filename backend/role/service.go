@@ -23,3 +23,21 @@ func (s Service) DeleteRole(name string) error {
 	_, err := s.DB.Exec(context.Background(), "delete from open_discord.roles where name = $1", name)
 	return err
 }
+
+func (s Service) GetAllRoles() ([]Role, error) {
+	rows, err := s.DB.Query(context.Background(), "select id, name from open_discord.roles")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var roles []Role
+	for rows.Next() {
+		var role Role
+		err := rows.Scan(&role.ID, &role.Name)
+		if err != nil {
+			return nil, err
+		}
+		roles = append(roles, role)
+	}
+	return roles, nil
+}

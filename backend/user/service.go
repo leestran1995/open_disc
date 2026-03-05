@@ -98,6 +98,24 @@ func (u UserService) GetUserRoles(ctx context.Context, userId uuid.UUID) ([]stri
 	return roles, nil
 }
 
+func (u UserService) GetUserRolesByUsername(ctx context.Context, username string) ([]string, error) {
+	var roles []string
+	rows, err := u.DB.Query(ctx, "select r.name from open_discord.roles r join open_discord.user_roles ur on r.id = ur.role_id join open_discord.users u on ur.user_id = u.id where u.username = $1", username)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var roleName string
+		err = rows.Scan(&roleName)
+		if err != nil {
+			return nil, err
+		}
+		roles = append(roles, roleName)
+	}
+	return roles, nil
+}
+
 // AssignUserToRole uses username and rolename as parameters since this will usually be used by a human and we don't want to make them
 // look up the user and role ids themselves
 func (u UserService) AssignUserToRole(ctx context.Context, username string, rolename string) error {

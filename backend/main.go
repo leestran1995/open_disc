@@ -101,7 +101,7 @@ func main() {
 	fmt.Println("Starting CLI")
 	otc := auth.Otc{DB: pool}
 	roleService := role.Service{DB: pool}
-	cli := cli.NewCli(&otc, &roleService, &services.UsersService)
+	cli := cli.NewCli(&otc, &roleService, &services.UsersService, &services.RoomsService)
 	go cli.Run()
 	router.Run(":8080")
 }

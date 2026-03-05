@@ -2,6 +2,7 @@ package room
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -41,10 +42,17 @@ func (s RoomService) GetAll(ctx context.Context, userId *uuid.UUID) ([]Room, err
 		sql = `select id, name, sort_order, false as starred from open_discord.rooms`
 		rows, err = s.DB.Query(ctx, sql)
 	} else {
-		sql = `select r.id, r.name, r.sort_order, urs.user_id is not null as starred
-				from open_discord.rooms r
-						 left join open_discord.user_room_stars urs on r.id = urs.room_id and urs.user_id = $1
-				order by r.sort_order`
+		sql = `SELECT DISTINCT r.id, r.name, r.sort_order,
+                urs.user_id IS NOT NULL AS starred
+				FROM open_discord.rooms r
+					LEFT JOIN open_discord.room_roles rr ON rr.room_id = r.id
+					LEFT JOIN open_discord.user_roles ur ON ur.role_id = rr.role_id
+														AND ur.user_id = $1
+					LEFT JOIN open_discord.user_room_stars urs ON urs.room_id = r.id
+															AND urs.user_id = $1
+				WHERE ur.user_id IS NOT NULL  -- user has access via a role
+				OR rr.room_id IS NULL      -- room has no roles attached (public)
+				ORDER BY r.sort_order`
 		rows, err = s.DB.Query(ctx, sql, *userId)
 	}
 
@@ -82,6 +90,11 @@ func (s RoomService) Reorder(ctx context.Context, req SwapRoomOrderRequest) erro
 		_, err := tx.Exec(ctx,
 			`update open_discord.rooms set sort_order = $1 where id = $2`, i+1, id)
 		if err != nil {
+			slog.Warn("Failed to reorder rooms",
+				slog.String("error", err.Error()),
+				slog.Int("index", i),
+				slog.String("roomId", id.String()),
+			)
 			return err
 		}
 	}
@@ -94,6 +107,11 @@ func (s RoomService) Star(ctx context.Context, userUuid uuid.UUID, roomUuid uuid
 		`insert into open_discord.user_room_stars(user_id, room_id) values ($1, $2)`,
 		userUuid, roomUuid)
 	if err != nil {
+		slog.Warn("Failed to star room",
+			slog.String("userUuid", userUuid.String()),
+			slog.String("roomUuid", roomUuid.String()),
+			slog.String("error", err.Error()),
+		)
 		return err
 	}
 	return nil
@@ -103,6 +121,77 @@ func (s RoomService) Unstar(ctx context.Context, userUuid uuid.UUID, roomUuid uu
 	_, err := s.DB.Exec(ctx,
 		`delete from open_discord.user_room_stars where user_id = $1 and room_id = $2`, userUuid, roomUuid)
 	if err != nil {
+		slog.Warn("Failed to unstar room",
+			slog.String("userUuid", userUuid.String()),
+			slog.String("roomUuid", roomUuid.String()),
+			slog.String("error", err.Error()),
+		)
+		return err
+	}
+	return nil
+}
+
+func (s RoomService) AssignRoomRole(ctx context.Context, roomName, roleName string) error {
+	var roomId uuid.UUID
+	err := s.DB.QueryRow(ctx, `select id from open_discord.rooms r where r.name = $1`, roomName).Scan(&roomId)
+
+	if err != nil {
+		slog.Warn("Failed to find room for assigning room role",
+			slog.String("roomName", roomName),
+			slog.String("roleName", roleName),
+			slog.String("error", err.Error()),
+		)
+		return err
+	}
+
+	var roldId uuid.UUID
+	err = s.DB.QueryRow(ctx, `select id from open_discord.roles r where r.name = $1`, roleName).Scan(&roldId)
+
+	if err != nil {
+		slog.Warn("Failed to find role for assigning room role",
+			slog.String("roomName", roomName),
+			slog.String("roleName", roleName),
+			slog.String("error", err.Error()),
+		)
+		return err
+	}
+
+	_, err = s.DB.Exec(ctx, `insert into open_discord.room_roles (room_id, role_id) values ($1, $2)`, roomId, roldId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s RoomService) RemoveRoomRole(ctx context.Context, roomName, roleName string) error {
+	var roomId uuid.UUID
+	err := s.DB.QueryRow(ctx, `select id from open_discord.rooms r where r.name = $1`, roomName).Scan(&roomId)
+	if err != nil {
+		slog.Warn("Failed to find room for removing room role",
+			slog.String("roomName", roomName),
+			slog.String("roleName", roleName),
+			slog.String("error", err.Error()),
+		)
+		return err
+	}
+
+	var roldId uuid.UUID
+	err = s.DB.QueryRow(ctx, `select id from open_discord.roles r where r.name = $1`, roleName).Scan(&roldId)
+	if err != nil {
+		slog.Warn("Failed to find role for removing room role",
+			slog.String("roomName", roomName),
+			slog.String("roleName", roleName),
+			slog.String("error", err.Error()),
+		)
+		return err
+	}
+	_, err = s.DB.Exec(ctx, `delete from open_discord.room_roles where room_id = $1 and role_id = $2`, roomId, roldId)
+	if err != nil {
+		slog.Warn("Failed to remove room role",
+			slog.String("roomName", roomName),
+			slog.String("roleName", roleName),
+			slog.String("error", err.Error()),
+		)
 		return err
 	}
 	return nil

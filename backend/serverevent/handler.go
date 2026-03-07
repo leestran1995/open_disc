@@ -44,6 +44,7 @@ func (ses *ServerEventHandler) HandleGetServerEvents(c *gin.Context) {
 	}
 
 	result, err := ses.ServerEventStore.GetServerEventsByEventOrder(c, eventOrderStart, eventOrderEnd)
+	
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

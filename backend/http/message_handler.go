@@ -76,7 +76,7 @@ func (h *MessageHandler) HandleCreateMessage(c *gin.Context) {
 		Message: request.Message,
 	}
 
-	serverEvent, err := h.ServerEventStore.Create(c, model.NewMessage, newRequest)
+	serverEvent, err := h.ServerEventStore.CreateAndBroadcast(c, model.NewMessage, newRequest)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}

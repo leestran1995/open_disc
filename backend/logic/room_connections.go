@@ -2,7 +2,6 @@ package logic
 
 import (
 	"backend/model"
-	"encoding/json"
 
 	"github.com/google/uuid"
 )
@@ -24,22 +23,4 @@ type Room struct {
 	ClientRegistry *ClientRegistry
 	RoomID         uuid.UUID
 	Name           string
-}
-
-func (r *Room) Send(message model.Message) error {
-	asJson, err := json.Marshal(message)
-	if err != nil {
-		return err
-	}
-
-	roomEvent := model.ServerEvent{
-		ServerEventType: model.NewMessage,
-		Payload:         asJson,
-	}
-
-	for _, client := range *r.ClientRegistry.Clients {
-		client.SendChannel <- roomEvent
-	}
-
-	return nil
 }

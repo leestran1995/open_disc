@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type Services struct {
@@ -27,13 +28,14 @@ func CreateServices(
 	secret string,
 	rooms *map[uuid.UUID]*logic.Room,
 	clientRegistry *logic.ClientRegistry,
+	redisClient *redis.Client,
 ) *Services {
-	usersService := user.UserService{DB: db, ClientRegistry: clientRegistry}
+	usersService := user.NewUserService(db, clientRegistry, redisClient)
 	return &Services{
-		UsersService:     usersService,
-		RoomsService:     room.RoomService{DB: db},
+		UsersService:     *usersService,
+		RoomsService:     *room.NewRoomService(db, redisClient),
 		AuthService:      auth.Service{DB: db},
-		TokenService:     auth.TokenService{Secret: []byte(secret), UserService: &usersService},
+		TokenService:     auth.TokenService{Secret: []byte(secret), UserService: usersService},
 		ServerEventStore: serverevent.ServerEventStore{DB: db, ClientRegistry: clientRegistry},
 	}
 }
@@ -49,10 +51,7 @@ type Handlers struct {
 
 func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room, clientRegistry *logic.ClientRegistry) *Handlers {
 	return &Handlers{
-		AuthHandler: auth.AuthHandler{
-			Auth:  &services.AuthService,
-			Token: &services.TokenService,
-		},
+		AuthHandler: *auth.NewAuthHandler(&services.AuthService, &services.TokenService, &services.UsersService),
 		UserHandler: user.UserHandler{
 			UserService: &services.UsersService,
 		},
@@ -62,9 +61,7 @@ func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room, client
 			clientRegistry,
 			&services.ServerEventStore,
 		),
-		MessagesHandler: http2.MessageHandler{
-			ServerEventStore: services.ServerEventStore,
-		},
+		MessagesHandler: *http2.NewMessageHandler(&services.ServerEventStore, &services.UsersService, &services.RoomsService),
 		SseHandler: sse.SseHandler{
 			RoomService:    &services.RoomsService,
 			Rooms:          rooms,

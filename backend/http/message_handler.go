@@ -2,7 +2,10 @@ package http
 
 import (
 	"backend/model"
+	"backend/role"
+	"backend/room"
 	"backend/serverevent"
+	"backend/user"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,7 +13,21 @@ import (
 )
 
 type MessageHandler struct {
-	ServerEventStore serverevent.ServerEventStore
+	ServerEventStore *serverevent.ServerEventStore
+	UserService      *user.UserService
+	RoomService      *room.RoomService
+}
+
+func NewMessageHandler(
+	serverEventStore *serverevent.ServerEventStore,
+	userService *user.UserService,
+	roomService *room.RoomService,
+) *MessageHandler {
+	return &MessageHandler{
+		ServerEventStore: serverEventStore,
+		UserService:      userService,
+		RoomService:      roomService,
+	}
 }
 
 func BindMessageRoutes(router *gin.Engine, messageHandler *MessageHandler) {
@@ -31,6 +48,28 @@ func (h *MessageHandler) HandleCreateMessage(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
+
+	// Check if user has permission to post in the room
+	userRoles, err := h.UserService.GetUserRoles(c.Request.Context(), userId.(uuid.UUID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	roomRoles, err := h.RoomService.GetRolesForRoom(c, request.RoomID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if !role.HasCommonRole(userRoles, roomRoles) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
+	}
+
+	// Done checking if user has permission
+
 	newRequest := model.MessageCreateRequest{
 		UserID:  userId.(uuid.UUID),
 		RoomID:  request.RoomID,

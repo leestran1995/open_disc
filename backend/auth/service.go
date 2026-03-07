@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"regexp"
 
@@ -18,6 +19,9 @@ type Service struct {
 // Signup performs validation checks and signs the user up if all the checks pass.
 func (a *Service) Signup(username string, password string, otc uuid.UUID) error {
 
+	slog.Info("Signing up user",
+		slog.String("username", username),
+	)
 	// Username validation
 	if a.UsernameExists(username) {
 		return errors.New("username exists")
@@ -55,15 +59,20 @@ func (a *Service) Signup(username string, password string, otc uuid.UUID) error 
 		return errors.New("invalid otc")
 	}
 
+	slog.Info("User passed validation checks, inserting them into database",
+		slog.String("username", username),
+	)
+
 	tx, err := a.DB.Begin(context.Background())
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(context.Background())
 
+	var userId uuid.UUID
 	// Insert the new user
-	_, err = tx.Exec(context.Background(),
-		`insert into open_discord.users(nickname, username, password) values ($1,$2,$3)`, username, username, passwordHash)
+	err = tx.QueryRow(context.Background(),
+		`insert into open_discord.users(nickname, username, password) values ($1,$2,$3) returning id`, username, username, passwordHash).Scan(&userId)
 
 	if err != nil {
 		return err
@@ -76,10 +85,24 @@ func (a *Service) Signup(username string, password string, otc uuid.UUID) error 
 		return err
 	}
 
-	err = tx.Commit(context.Background())
+	slog.Info("Assigning user to default role",
+		slog.String("username", username),
+	)
+	// Assign the user the default role
+	var defaultRoleId uuid.UUID
+	err = tx.QueryRow(context.Background(),
+		`select id from open_discord.roles where name = 'default'`).Scan(&defaultRoleId)
 	if err != nil {
+		fmt.Print(err.Error())
 		return err
 	}
+	_, err = tx.Exec(context.Background(),
+		`insert into open_discord.user_roles(user_id, role_id) values ($1, $2)`, userId, defaultRoleId)
+	if err != nil {
+		fmt.Print(err.Error())
+		return err
+	}
+	tx.Commit(context.Background())
 	return nil
 }
 

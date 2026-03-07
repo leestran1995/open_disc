@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"backend/user"
 	"net/http"
 	"strings"
 
@@ -9,8 +10,17 @@ import (
 )
 
 type AuthHandler struct {
-	Auth  *Service
-	Token *TokenService
+	Auth         *Service
+	Token        *TokenService
+	UserSerivice *user.UserService
+}
+
+func NewAuthHandler(auth *Service, token *TokenService, userService *user.UserService) *AuthHandler {
+	return &AuthHandler{
+		Auth:         auth,
+		Token:        token,
+		UserSerivice: userService,
+	}
 }
 
 type SignInRequest struct {
@@ -136,6 +146,14 @@ func AuthMiddleware(t *TokenService) gin.HandlerFunc {
 		}
 		c.Set("username", claims.Username)
 		c.Set("user_id", claims.UserID)
+
+		userRoles, err := t.UserService.GetUserRoles(c.Request.Context(), claims.UserID)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{})
+		}
+
+		c.Set("user_roles", userRoles)
+
 		c.Next()
 	}
 }

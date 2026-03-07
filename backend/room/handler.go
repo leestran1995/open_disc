@@ -64,9 +64,9 @@ func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
 		Payload:         u.Name,
 	}
 
-	h.ServerEventStore.CreateAndBroadcast(c, model.RoomCreated, u)
+	h.ServerEventStore.Create(c, model.RoomCreated, u)
 	// This should be in the service layer, alas
-	h.ClientRegistry.FanOutServerEvent(roomCreatedEvent)
+	h.ClientRegistry.FanOutMessage(roomCreatedEvent)
 
 	c.JSON(http.StatusCreated, u)
 }

@@ -13,7 +13,7 @@ func (c *ClientRegistry) Connect(rc *RoomClient) {
 		Payload:         rc.Username,
 	}
 
-	c.FanOutServerEvent(connectEvent)
+	c.FanOutMessage(connectEvent)
 }
 
 func (c *ClientRegistry) Disconnect(rc RoomClient) {
@@ -24,14 +24,14 @@ func (c *ClientRegistry) Disconnect(rc RoomClient) {
 		Payload:         rc.Username,
 	}
 
-	c.FanOutServerEvent(disconnectEvent)
+	c.FanOutMessage(disconnectEvent)
 }
 
 func (c *ClientRegistry) IsOnline(username string) bool {
 	return (*c.Clients)[username] != nil
 }
 
-func (c *ClientRegistry) FanOutServerEvent(message model.ServerEvent) {
+func (c *ClientRegistry) FanOutMessage(message model.ServerEvent) {
 	for _, rc := range *c.Clients {
 		rc.SendChannel <- message
 	}

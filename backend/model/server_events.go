@@ -20,7 +20,6 @@ const (
 	UserLeft    ServerEventType = "user_left"
 	RoomCreated ServerEventType = "room_created"
 	RoomDeleted ServerEventType = "room_deleted"
-	Redacted    ServerEventType = "redacted"
 )
 
 type ServerEvent struct {
@@ -29,7 +28,6 @@ type ServerEvent struct {
 	ServerEventOrder int             `json:"server_event_order"`
 	ServerEventTime  time.Time       `json:"server_event_time"`
 	Payload          any             `json:"payload"`
-	RoleScope        *[]string
 }
 
 type Message struct {

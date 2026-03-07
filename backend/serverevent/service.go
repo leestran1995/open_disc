@@ -14,7 +14,7 @@ type ServerEventStore struct {
 	ClientRegistry *logic.ClientRegistry
 }
 
-func (s ServerEventStore) CreateAndBroadcast(ctx context.Context, eventType model.ServerEventType, payload any) (*model.ServerEvent, error) {
+func (s ServerEventStore) Create(ctx context.Context, eventType model.ServerEventType, payload any) (*model.ServerEvent, error) {
 	var serverEvent model.ServerEvent
 	var payloadBytes []byte
 	var payloadJson json.RawMessage
@@ -32,7 +32,7 @@ func (s ServerEventStore) CreateAndBroadcast(ctx context.Context, eventType mode
 		return nil, err
 	}
 
-	s.ClientRegistry.FanOutServerEvent(serverEvent)
+	s.ClientRegistry.FanOutMessage(serverEvent)
 
 	return &serverEvent, nil
 }

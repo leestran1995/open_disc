@@ -4,10 +4,7 @@ import (
 	"backend/auth"
 	"backend/logic"
 	"backend/model"
-	"backend/redacter"
 	"backend/room"
-	"backend/user"
-	"context"
 	"log/slog"
 
 	"github.com/gin-gonic/gin"
@@ -19,17 +16,6 @@ type SseHandler struct {
 	Rooms          *map[uuid.UUID]*logic.Room
 	TokenService   *auth.TokenService
 	ClientRegistry *logic.ClientRegistry
-	UsersService   *user.UserService
-}
-
-func NewSseHandler(roomService *room.RoomService, rooms *map[uuid.UUID]*logic.Room, tokenService *auth.TokenService, clientRegistry *logic.ClientRegistry, usersService *auth.UserService) *SseHandler {
-	return &SseHandler{
-		RoomService:    roomService,
-		Rooms:          rooms,
-		TokenService:   tokenService,
-		ClientRegistry: clientRegistry,
-		UsersService:   usersService,
-	}
 }
 
 func (s *SseHandler) EstablishSSEConnection(c *gin.Context) {
@@ -37,13 +23,6 @@ func (s *SseHandler) EstablishSSEConnection(c *gin.Context) {
 	slog.Info("Establishing new client connection")
 
 	username := c.GetString("username")
-	userId, exists := c.Get("user_id")
-	if !exists {
-		slog.Error("Failed to get user_id from context for username: " + username)
-		c.JSON(500, gin.H{"error": "Failed to get user_id from context"})
-		return
-	}
-
 	sendChannel := make(chan model.ServerEvent, 50)
 
 	roomClient := logic.RoomClient{
@@ -68,18 +47,10 @@ func (s *SseHandler) EstablishSSEConnection(c *gin.Context) {
 			return
 
 		case message := <-sendChannel:
-			userRoles, err := s.UsersService.GetUserRoles(context.Background(), userId.(uuid.UUID))
-			if err != nil {
-				slog.Error("Failed to get user roles for user: "+username, "error", err)
-				continue
-			}
-
-			redactResult := redacter.RedactServerEvent(message, userRoles)
-
 			if message.ServerEventOrder == 0 {
-				c.SSEvent(string(message.ServerEventType), redactResult.Payload)
+				c.SSEvent(string(message.ServerEventType), message.Payload)
 			} else {
-				c.SSEvent(string(message.ServerEventType), redactResult)
+				c.SSEvent(string(message.ServerEventType), message)
 			}
 			c.Writer.Flush()
 		}

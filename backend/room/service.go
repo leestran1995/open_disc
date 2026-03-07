@@ -3,14 +3,24 @@ package room
 import (
 	"context"
 	"log/slog"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type RoomService struct {
-	DB *pgxpool.Pool
+	DB          *pgxpool.Pool
+	RedisClient *redis.Client
+}
+
+func NewRoomService(db *pgxpool.Pool, redisClient *redis.Client) *RoomService {
+	return &RoomService{
+		DB:          db,
+		RedisClient: redisClient,
+	}
 }
 
 func (s RoomService) Create(ctx context.Context, request CreateRoomRequest) (*Room, error) {
@@ -161,6 +171,40 @@ func (s RoomService) Unstar(ctx context.Context, userUuid uuid.UUID, roomUuid uu
 	return nil
 }
 
+func roomRoleRedisKey(roomId uuid.UUID) string {
+	return "room_roles:" + roomId.String()
+}
+
+func (s RoomService) GetRolesForRoom(ctx context.Context, roomId uuid.UUID) ([]string, error) {
+	// Check Redis first
+	redisKey := roomRoleRedisKey(roomId)
+	cachedRoles, err := s.RedisClient.Get(ctx, redisKey).Result()
+	if err == nil {
+		slog.Info("Cache hit for room roles", slog.String("room_id", roomId.String()))
+		return strings.Split(cachedRoles, ","), nil
+	} else {
+		slog.Info("Cache miss for room roles", slog.String("room_id", roomId.String()))
+		slog.Error(err.Error())
+	}
+
+	// Fetch from DB
+	var roles []string
+	rows, err := s.DB.Query(ctx, `select r.name from open_discord.roles r join open_discord.room_roles rr on r.id = rr.role_id where rr.room_id = $1`, roomId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var roleName string
+		err = rows.Scan(&roleName)
+		if err != nil {
+			return nil, err
+		}
+		roles = append(roles, roleName)
+	}
+	return roles, nil
+}
+
 func (s RoomService) AssignRoomRole(ctx context.Context, roomName, roleName string) error {
 	var roomId uuid.UUID
 	err := s.DB.QueryRow(ctx, `select id from open_discord.rooms r where r.name = $1`, roomName).Scan(&roomId)
@@ -189,6 +233,16 @@ func (s RoomService) AssignRoomRole(ctx context.Context, roomName, roleName stri
 	_, err = s.DB.Exec(ctx, `insert into open_discord.room_roles (room_id, role_id) values ($1, $2)`, roomId, roldId)
 	if err != nil {
 		return err
+	}
+
+	// Evict the cache for the room's roles since we've made a change
+	redisKey := roomRoleRedisKey(roomId)
+	err = s.RedisClient.Del(ctx, redisKey).Err()
+	if err != nil {
+		slog.Error(
+			"Error invalidating room roles cache",
+			slog.String("room_id", roomId.String()),
+		)
 	}
 	return nil
 }
@@ -223,6 +277,16 @@ func (s RoomService) RemoveRoomRole(ctx context.Context, roomName, roleName stri
 			slog.String("error", err.Error()),
 		)
 		return err
+	}
+
+	// Evict the cache for the room's roles since we've made a change
+	redisKey := roomRoleRedisKey(roomId)
+	err = s.RedisClient.Del(ctx, redisKey).Err()
+	if err != nil {
+		slog.Error(
+			"Error invalidating room roles cache",
+			slog.String("room_id", roomId.String()),
+		)
 	}
 	return nil
 }

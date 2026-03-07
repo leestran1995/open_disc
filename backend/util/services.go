@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type Services struct {
@@ -27,13 +28,14 @@ func CreateServices(
 	secret string,
 	rooms *map[uuid.UUID]*logic.Room,
 	clientRegistry *logic.ClientRegistry,
+	redisClient *redis.Client,
 ) *Services {
-	usersService := user.UserService{DB: db, ClientRegistry: clientRegistry}
+	usersService := user.NewUserService(db, clientRegistry, redisClient)
 	return &Services{
-		UsersService:     usersService,
-		RoomsService:     room.RoomService{DB: db},
+		UsersService:     *usersService,
+		RoomsService:     *room.NewRoomService(db, redisClient),
 		AuthService:      auth.Service{DB: db},
-		TokenService:     auth.TokenService{Secret: []byte(secret), UserService: &usersService},
+		TokenService:     auth.TokenService{Secret: []byte(secret), UserService: usersService},
 		ServerEventStore: serverevent.ServerEventStore{DB: db, ClientRegistry: clientRegistry},
 	}
 }

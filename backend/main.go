@@ -22,6 +22,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 )
 
 func setupRouter() *gin.Engine {
@@ -54,6 +55,17 @@ func main() {
 	dbURL := os.Getenv("DATABASE_URL")
 	jwtSecret := os.Getenv("JWT_SECRET")
 
+	redisAddr := os.Getenv("REDIS_ADDR")
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+	redisDB := 0
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     redisAddr,
+		Password: redisPassword,
+		DB:       redisDB,
+	})
+	defer redisClient.Close()
+
 	// Create DB Pool
 	pool, err := pgxpool.New(ctx, dbURL)
 	if err != nil {
@@ -61,7 +73,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	services := util.CreateServices(pool, jwtSecret, &rooms, &clientRegistry)
+	services := util.CreateServices(pool, jwtSecret, &rooms, &clientRegistry, redisClient)
 	handlers := util.CreateHandlers(services, &rooms, &clientRegistry)
 
 	// Add all existing rooms to memory

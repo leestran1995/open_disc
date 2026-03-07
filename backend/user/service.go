@@ -3,14 +3,27 @@ package user
 import (
 	"backend/logic"
 	"context"
+	"log/slog"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type UserService struct {
 	DB             *pgxpool.Pool
 	ClientRegistry *logic.ClientRegistry
+	RedisClient    *redis.Client
+}
+
+func NewUserService(db *pgxpool.Pool, clientRegistry *logic.ClientRegistry, redisClient *redis.Client) *UserService {
+	return &UserService{
+		DB:             db,
+		ClientRegistry: clientRegistry,
+		RedisClient:    redisClient,
+	}
 }
 
 func (u UserService) GetUserByID(ctx context.Context, userId uuid.UUID) (*User, error) {
@@ -80,7 +93,24 @@ func (u UserService) GetAllUsers(ctx context.Context) ([]User, error) {
 	return users, nil
 }
 
+func userRoleRedisKey(userId uuid.UUID) string {
+	return "user_roles:" + userId.String()
+}
+
 func (u UserService) GetUserRoles(ctx context.Context, userId uuid.UUID) ([]string, error) {
+	slog.Info("Getting user roles", slog.String("user_id", userId.String()))
+	// Check Redis first
+	redisKey := userRoleRedisKey(userId)
+
+	cachedRoles, err := u.RedisClient.Get(ctx, redisKey).Result()
+	if err == nil {
+		slog.Info("Cache hit on get user roles", slog.String("user_id", userId.String()))
+		return strings.Split(cachedRoles, ";"), nil
+	} else {
+		slog.Info("Cache miss on get user roles", slog.String("user_id", userId.String()))
+		slog.Error(err.Error())
+	}
+
 	var roles []string
 	rows, err := u.DB.Query(ctx, "select r.name from open_discord.roles r join open_discord.user_roles ur on r.id = ur.role_id where ur.user_id = $1", userId)
 	if err != nil {
@@ -95,6 +125,8 @@ func (u UserService) GetUserRoles(ctx context.Context, userId uuid.UUID) ([]stri
 		}
 		roles = append(roles, roleName)
 	}
+	// Cache the roles in Redis for future requests
+	err = u.RedisClient.Set(ctx, redisKey, strings.Join(roles, ";"), 5*time.Minute).Err()
 	return roles, nil
 }
 
@@ -119,6 +151,11 @@ func (u UserService) GetUserRolesByUsername(ctx context.Context, username string
 // AssignUserToRole uses username and rolename as parameters since this will usually be used by a human and we don't want to make them
 // look up the user and role ids themselves
 func (u UserService) AssignUserToRole(ctx context.Context, username string, rolename string) error {
+	slog.Info("Assigning user to role",
+		slog.String("username", username),
+		slog.String("role", rolename),
+	)
+
 	var userId uuid.UUID
 	var roleId uuid.UUID
 
@@ -133,6 +170,14 @@ func (u UserService) AssignUserToRole(ctx context.Context, username string, role
 	}
 
 	_, err = u.DB.Exec(ctx, "insert into open_discord.user_roles(user_id, role_id) values ($1, $2)", userId, roleId)
+
+	// Invalidate the cache for the user's roles since we've made a change
+	slog.Info("Invalidating role cache for user", slog.String("username", username))
+	redisKey := userRoleRedisKey(userId)
+	err = u.RedisClient.Del(ctx, redisKey).Err()
+	if err != nil {
+		slog.Error("Error invalidating user roles cache", slog.String("user_id", userId.String()))
+	}
 	return err
 }
 

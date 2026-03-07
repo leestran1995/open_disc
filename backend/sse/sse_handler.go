@@ -22,7 +22,7 @@ type SseHandler struct {
 	UsersService   *user.UserService
 }
 
-func NewSseHandler(roomService *room.RoomService, rooms *map[uuid.UUID]*logic.Room, tokenService *auth.TokenService, clientRegistry *logic.ClientRegistry, usersService *user.UserService) *SseHandler {
+func NewSseHandler(roomService *room.RoomService, rooms *map[uuid.UUID]*logic.Room, tokenService *auth.TokenService, clientRegistry *logic.ClientRegistry, usersService *auth.UserService) *SseHandler {
 	return &SseHandler{
 		RoomService:    roomService,
 		Rooms:          rooms,

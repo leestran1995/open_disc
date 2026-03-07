@@ -41,3 +41,25 @@ func (s Service) GetAllRoles() ([]Role, error) {
 	}
 	return roles, nil
 }
+
+func IsAdmin(roles []string) bool {
+	for _, role := range roles {
+		if role == "admin" {
+			return true
+		}
+	}
+	return false
+}
+
+func HasCommonRole(rolesOne, rolesTwo []string) bool {
+	roleSet := make(map[string]struct{})
+	for _, role := range rolesOne {
+		roleSet[role] = struct{}{}
+	}
+	for _, role := range rolesTwo {
+		if _, exists := roleSet[role]; exists {
+			return true
+		}
+	}
+	return false
+}

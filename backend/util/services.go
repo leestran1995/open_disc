@@ -61,9 +61,7 @@ func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room, client
 			clientRegistry,
 			&services.ServerEventStore,
 		),
-		MessagesHandler: http2.MessageHandler{
-			ServerEventStore: services.ServerEventStore,
-		},
+		MessagesHandler: *http2.NewMessageHandler(&services.ServerEventStore, &services.UsersService, &services.RoomsService),
 		SseHandler: sse.SseHandler{
 			RoomService:    &services.RoomsService,
 			Rooms:          rooms,

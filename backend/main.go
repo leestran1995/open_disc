@@ -3,10 +3,10 @@ package main
 import (
 	"backend/auth"
 	"backend/cli"
-	http2 "backend/http"
 	"backend/logic"
+	"backend/message"
+	"backend/role"
 	"backend/room"
-	"backend/serverevent"
 	"backend/util"
 	"context"
 	"fmt"
@@ -21,6 +21,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 )
 
 func setupRouter() *gin.Engine {
@@ -32,13 +33,13 @@ func setupRouter() *gin.Engine {
 }
 
 var rooms map[uuid.UUID]*logic.Room
-var clients map[string]*logic.RoomClient
+var clients map[uuid.UUID]*logic.RoomClient
 
 func main() {
 	fmt.Println("Starting application")
 
 	rooms = make(map[uuid.UUID]*logic.Room)
-	clients = make(map[string]*logic.RoomClient)
+	clients = make(map[uuid.UUID]*logic.RoomClient)
 
 	clientRegistry := logic.ClientRegistry{Clients: &clients}
 
@@ -53,6 +54,17 @@ func main() {
 	dbURL := os.Getenv("DATABASE_URL")
 	jwtSecret := os.Getenv("JWT_SECRET")
 
+	redisAddr := os.Getenv("REDIS_ADDR")
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+	redisDB := 0
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     redisAddr,
+		Password: redisPassword,
+		DB:       redisDB,
+	})
+	defer redisClient.Close()
+
 	// Create DB Pool
 	pool, err := pgxpool.New(ctx, dbURL)
 	if err != nil {
@@ -60,7 +72,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	services := util.CreateServices(pool, jwtSecret, &rooms, &clientRegistry)
+	services := util.CreateServices(pool, jwtSecret, &rooms, &clientRegistry, redisClient)
 	handlers := util.CreateHandlers(services, &rooms, &clientRegistry)
 
 	// Add all existing rooms to memory
@@ -90,16 +102,18 @@ func main() {
 
 	user.BindUserRoutes(router, &handlers.UserHandler)
 	room.BindRoomRoutes(router, &handlers.RoomHandler)
-	http2.BindMessageRoutes(router, &handlers.MessagesHandler)
 	auth.BindAuthRoutes(router, &handlers.AuthHandler)
-	serverevent.BindServerEventRoutes(router, &handlers.ServerEventHandler)
+	message.BindMessageRoutes(router, &handlers.MessagesHandler)
+
 	router.GET(
 		"/connect",
 		handlers.SseHandler.EstablishSSEConnection,
 	)
+
 	fmt.Println("Starting CLI")
 	otc := auth.Otc{DB: pool}
-	cli := cli.Cli{Otc: &otc}
+	roleService := role.Service{DB: pool}
+	cli := cli.NewCli(&otc, &roleService, &services.UsersService, &services.RoomsService)
 	go cli.Run()
 	router.Run(":8080")
 }

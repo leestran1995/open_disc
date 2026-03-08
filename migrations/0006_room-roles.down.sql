@@ -1,0 +1,1 @@
+drop table open_discord.room_roles;   

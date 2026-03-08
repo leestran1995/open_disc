@@ -4,7 +4,9 @@ import (
 	"backend/auth"
 	"backend/logic"
 	"backend/model"
+	"backend/role"
 	"backend/room"
+	"backend/user"
 	"log/slog"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +18,23 @@ type SseHandler struct {
 	Rooms          *map[uuid.UUID]*logic.Room
 	TokenService   *auth.TokenService
 	ClientRegistry *logic.ClientRegistry
+	UserService    *user.UserService
+}
+
+func NewSseHandler(
+	roomService *room.RoomService,
+	Rooms *map[uuid.UUID]*logic.Room,
+	tokenService *auth.TokenService,
+	clientRegistry *logic.ClientRegistry,
+	userService *user.UserService,
+) *SseHandler {
+	return &SseHandler{
+		RoomService:    roomService,
+		Rooms:          Rooms,
+		TokenService:   tokenService,
+		ClientRegistry: clientRegistry,
+		UserService:    userService,
+	}
 }
 
 func (s *SseHandler) EstablishSSEConnection(c *gin.Context) {
@@ -23,10 +42,16 @@ func (s *SseHandler) EstablishSSEConnection(c *gin.Context) {
 	slog.Info("Establishing new client connection")
 
 	username := c.GetString("username")
+	userId, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(401, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	sendChannel := make(chan model.ServerEvent, 50)
 
 	roomClient := logic.RoomClient{
-		Username:    username,
+		UserID:      userId.(uuid.UUID),
 		SendChannel: sendChannel,
 	}
 
@@ -39,6 +64,9 @@ func (s *SseHandler) EstablishSSEConnection(c *gin.Context) {
 
 	slog.Info("Established connection with " + username + ", waiting on messages to send them.")
 
+	// If the client gets a message with a lastMessage ID they have not actually received, they know they missed something
+	// and can re-sync with the backend
+	clientMessageId := 0
 	for {
 		select {
 		case <-c.Request.Context().Done():
@@ -47,12 +75,17 @@ func (s *SseHandler) EstablishSSEConnection(c *gin.Context) {
 			return
 
 		case message := <-sendChannel:
-			if message.ServerEventOrder == 0 {
-				c.SSEvent(string(message.ServerEventType), message.Payload)
-			} else {
-				c.SSEvent(string(message.ServerEventType), message)
+			userRoles, err := s.UserService.GetUserRoles(c.Request.Context(), userId.(uuid.UUID))
+			if err != nil {
+				slog.Error("Error fetching user roles for SSE connection: ", err)
+				continue
 			}
-			c.Writer.Flush()
+			if role.HasCommonRole(&userRoles, message.Roles) {
+				message.ClientMessageId = clientMessageId + 1
+				clientMessageId++
+				c.SSEvent(string(message.ServerEventType), message)
+				c.Writer.Flush()
+			}
 		}
 	}
 }

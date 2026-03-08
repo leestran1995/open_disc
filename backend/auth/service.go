@@ -145,7 +145,7 @@ type CheckPasswordResult struct {
 }
 
 func (cpr *CheckPasswordResult) IsValid() bool {
-	return cpr.HasUppercase && cpr.HasLowercase && cpr.HasNumber && cpr.HasSpecial
+	return cpr.HasUppercase && cpr.HasLowercase && cpr.HasNumber && cpr.HasSpecial && cpr.HasEightChars
 }
 
 func CheckPasswordStrength(password string) CheckPasswordResult {

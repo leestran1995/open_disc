@@ -2,8 +2,8 @@ package util
 
 import (
 	auth "backend/auth"
-	http2 "backend/http"
 	"backend/logic"
+	"backend/message"
 	"backend/serverevent"
 	"backend/sse"
 
@@ -21,6 +21,7 @@ type Services struct {
 	AuthService      auth.Service
 	TokenService     auth.TokenService
 	ServerEventStore serverevent.ServerEventStore
+	MessageService   message.Service
 }
 
 func CreateServices(
@@ -36,22 +37,26 @@ func CreateServices(
 		RoomsService:     *room.NewRoomService(db, redisClient),
 		AuthService:      auth.Service{DB: db},
 		TokenService:     auth.TokenService{Secret: []byte(secret), UserService: usersService},
-		ServerEventStore: serverevent.ServerEventStore{DB: db, ClientRegistry: clientRegistry},
+		ServerEventStore: serverevent.ServerEventStore{ClientRegistry: clientRegistry},
+		MessageService:   *message.NewMessageService(db),
 	}
 }
 
 type Handlers struct {
-	AuthHandler        auth.AuthHandler
-	UserHandler        user.UserHandler
-	RoomHandler        room.RoomHandler
-	MessagesHandler    http2.MessageHandler
-	SseHandler         sse.SseHandler
-	ServerEventHandler serverevent.ServerEventHandler
+	AuthHandler     auth.AuthHandler
+	UserHandler     user.UserHandler
+	RoomHandler     room.RoomHandler
+	MessagesHandler message.MessageHandler
+	SseHandler      sse.SseHandler
 }
 
 func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room, clientRegistry *logic.ClientRegistry) *Handlers {
 	return &Handlers{
-		AuthHandler: *auth.NewAuthHandler(&services.AuthService, &services.TokenService, &services.UsersService),
+		AuthHandler: *auth.NewAuthHandler(
+			&services.AuthService,
+			&services.TokenService,
+			&services.UsersService,
+		),
 		UserHandler: user.UserHandler{
 			UserService: &services.UsersService,
 		},
@@ -61,15 +66,18 @@ func CreateHandlers(services *Services, rooms *map[uuid.UUID]*logic.Room, client
 			clientRegistry,
 			&services.ServerEventStore,
 		),
-		MessagesHandler: *http2.NewMessageHandler(&services.ServerEventStore, &services.UsersService, &services.RoomsService),
-		SseHandler: sse.SseHandler{
-			RoomService:    &services.RoomsService,
-			Rooms:          rooms,
-			TokenService:   &services.TokenService,
-			ClientRegistry: clientRegistry,
-		},
-		ServerEventHandler: serverevent.ServerEventHandler{
-			ServerEventStore: services.ServerEventStore,
-		},
+		MessagesHandler: *message.NewMessageHandler(
+			&services.ServerEventStore,
+			&services.UsersService,
+			&services.RoomsService,
+			&services.MessageService,
+		),
+		SseHandler: *sse.NewSseHandler(
+			&services.RoomsService,
+			rooms,
+			&services.TokenService,
+			clientRegistry,
+			&services.UsersService,
+		),
 	}
 }

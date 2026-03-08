@@ -47,28 +47,28 @@ func (h *RoomHandler) HandleCreateRoom(c *gin.Context) {
 		return
 	}
 
-	u, err := h.RoomService.Create(c.Request.Context(), request)
+	newRoom, err := h.RoomService.Create(c.Request.Context(), request)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	(*h.Rooms)[u.ID] = &logic.Room{
+	(*h.Rooms)[newRoom.ID] = &logic.Room{
 		ClientRegistry: h.ClientRegistry,
-		RoomID:         u.ID,
-		Name:           u.Name,
+		RoomID:         newRoom.ID,
+		Name:           newRoom.Name,
 	}
 
 	roomCreatedEvent := model.ServerEvent{
 		ServerEventType: model.RoomCreated,
-		Payload:         u.Name,
+		Payload:         newRoom.Name,
 	}
 
-	h.ServerEventStore.Create(c, model.RoomCreated, u)
+	h.ServerEventStore.Create(c, model.RoomCreated, newRoom, nil)
 	// This should be in the service layer, alas
-	h.ClientRegistry.FanOutMessage(roomCreatedEvent)
+	h.ClientRegistry.FanOutMessage(roomCreatedEvent, nil)
 
-	c.JSON(http.StatusCreated, u)
+	c.JSON(http.StatusCreated, newRoom)
 }
 
 func (h *RoomHandler) HandleSwapRoomOrder(c *gin.Context) {

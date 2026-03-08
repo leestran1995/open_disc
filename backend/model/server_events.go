@@ -23,11 +23,11 @@ const (
 )
 
 type ServerEvent struct {
-	ServerEventType  ServerEventType `json:"server_event_type"`
-	ServerEventID    uuid.UUID       `json:"server_event_id"`
-	ServerEventOrder int             `json:"server_event_order"`
-	ServerEventTime  time.Time       `json:"server_event_time"`
-	Payload          any             `json:"payload"`
+	ServerEventType ServerEventType `json:"server_event_type"`
+	ServerEventTime time.Time       `json:"server_event_time"`
+	Payload         any             `json:"payload"`
+	ClientMessageId int             `json:"client_message_id,omitempty"`
+	Roles           *[]string       `json:"roles,omitempty"`
 }
 
 type Message struct {

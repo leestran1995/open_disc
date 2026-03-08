@@ -51,12 +51,18 @@ func IsAdmin(roles []string) bool {
 	return false
 }
 
-func HasCommonRole(rolesOne, rolesTwo []string) bool {
+func HasCommonRole(userRoles, roomRoles *[]string) bool {
+	if userRoles == nil || len(*userRoles) == 0 {
+		return false
+	}
+	if roomRoles == nil || len(*roomRoles) == 0 {
+		return true
+	}
 	roleSet := make(map[string]struct{})
-	for _, role := range rolesOne {
+	for _, role := range *userRoles {
 		roleSet[role] = struct{}{}
 	}
-	for _, role := range rolesTwo {
+	for _, role := range *roomRoles {
 		if _, exists := roleSet[role]; exists {
 			return true
 		}

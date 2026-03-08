@@ -11,7 +11,7 @@ import (
 // UserID is their unique user identifier
 // SendChannel is the channel that their SSE connection will receive messages from
 type RoomClient struct {
-	Username    string
+	UserID      uuid.UUID
 	Nickname    string
 	SendChannel chan model.ServerEvent
 }

@@ -3,11 +3,10 @@ package main
 import (
 	"backend/auth"
 	"backend/cli"
-	http2 "backend/http"
 	"backend/logic"
+	"backend/message"
 	"backend/role"
 	"backend/room"
-	"backend/serverevent"
 	"backend/util"
 	"context"
 	"fmt"
@@ -34,13 +33,13 @@ func setupRouter() *gin.Engine {
 }
 
 var rooms map[uuid.UUID]*logic.Room
-var clients map[string]*logic.RoomClient
+var clients map[uuid.UUID]*logic.RoomClient
 
 func main() {
 	fmt.Println("Starting application")
 
 	rooms = make(map[uuid.UUID]*logic.Room)
-	clients = make(map[string]*logic.RoomClient)
+	clients = make(map[uuid.UUID]*logic.RoomClient)
 
 	clientRegistry := logic.ClientRegistry{Clients: &clients}
 
@@ -103,13 +102,14 @@ func main() {
 
 	user.BindUserRoutes(router, &handlers.UserHandler)
 	room.BindRoomRoutes(router, &handlers.RoomHandler)
-	http2.BindMessageRoutes(router, &handlers.MessagesHandler)
 	auth.BindAuthRoutes(router, &handlers.AuthHandler)
-	serverevent.BindServerEventRoutes(router, &handlers.ServerEventHandler)
+	message.BindMessageRoutes(router, &handlers.MessagesHandler)
+
 	router.GET(
 		"/connect",
 		handlers.SseHandler.EstablishSSEConnection,
 	)
+
 	fmt.Println("Starting CLI")
 	otc := auth.Otc{DB: pool}
 	roleService := role.Service{DB: pool}

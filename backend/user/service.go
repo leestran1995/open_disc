@@ -78,7 +78,7 @@ func (u UserService) GetAllUsers(ctx context.Context) ([]User, error) {
 		if err != nil {
 			return nil, err
 		}
-		if u.ClientRegistry.IsOnline(user.Username) {
+		if u.ClientRegistry.IsOnline(user.UserID) {
 			user.IsOnline = true
 		} else {
 			user.IsOnline = false

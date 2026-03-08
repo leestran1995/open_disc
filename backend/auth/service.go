@@ -16,6 +16,13 @@ type Service struct {
 	DB *pgxpool.Pool
 }
 
+var (
+	reUppercase = regexp.MustCompile(`[A-Z]`)
+	reLowercase = regexp.MustCompile(`[a-z]`)
+	reNumber    = regexp.MustCompile(`[0-9]`)
+	reSpecial   = regexp.MustCompile(`[!@#$%^&*()\-+]`)
+)
+
 // Signup performs validation checks and signs the user up if all the checks pass.
 func (a *Service) Signup(username string, password string, otc uuid.UUID) error {
 
@@ -150,10 +157,10 @@ func (cpr *CheckPasswordResult) IsValid() bool {
 
 func CheckPasswordStrength(password string) CheckPasswordResult {
 	return CheckPasswordResult{
-		HasUppercase:  regexp.MustCompile("[A-Z]").MatchString(password),
-		HasLowercase:  regexp.MustCompile("[a-z]").MatchString(password),
-		HasNumber:     regexp.MustCompile("[0-9]").MatchString(password),
-		HasSpecial:    regexp.MustCompile("[!@#$%^&*()-+]").MatchString(password),
+		HasUppercase:  reUppercase.MatchString(password),
+		HasLowercase:  reLowercase.MatchString(password),
+		HasNumber:     reNumber.MatchString(password),
+		HasSpecial:    reSpecial.MatchString(password),
 		HasEightChars: len(password) >= 8,
 	}
 }

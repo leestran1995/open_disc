@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import { authToken } from './stores';
-import type { ApiResult, SigninResponse, SignupResponse, MessagesResponse, MessageCreateResponse, Room, ServerEventsResponse } from './types';
+import type { ApiResult, SigninResponse, SignupResponse, MessagesResponse, MessageCreateResponse, Room, ServerEventsResponse, CheckPasswordResponse, ChangePasswordResponse } from './types';
 
 const BASE = import.meta.env.VITE_API_BASE || '/api';
 
@@ -114,4 +114,20 @@ export function getServerEvents(orderStart: number, orderEnd?: number): Promise<
   let query = `?event_order_start=${orderStart}`;
   if (orderEnd !== undefined) query += `&event_order_end=${orderEnd}`;
   return request<ServerEventsResponse>(`/events${query}`);
+}
+
+/** POST /check_password — server-side password strength check. */
+export function checkPassword(password: string): Promise<ApiResult<CheckPasswordResponse>> {
+  return request<CheckPasswordResponse>('/check_password', {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+  });
+}
+
+/** POST /change_password — change password (authenticated). */
+export function changePassword(oldPassword: string, newPassword: string): Promise<ApiResult<ChangePasswordResponse>> {
+  return request<ChangePasswordResponse>('/change_password', {
+    method: 'POST',
+    body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
+  });
 }

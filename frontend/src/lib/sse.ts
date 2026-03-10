@@ -13,6 +13,7 @@ let reconnectDelay = 1000;
 // --- SSE event handlers ---
 
 function handleNewMessage(msg: Message): void {
+  console.log(msg);
   if (!msg || !msg.room_id) return;
 
   if (msg.id) {
@@ -47,7 +48,7 @@ async function handleRoomCreated(_roomName: string): Promise<void> {
  * missing top-level room_id, and handleRoomCreated is idempotent.
  */
 function handleEvent(eventType: string, rawData: string): void {
-  let parsed: unknown;
+  let parsed: any;
   try {
     parsed = JSON.parse(rawData);
   } catch {
@@ -56,7 +57,7 @@ function handleEvent(eventType: string, rawData: string): void {
 
   switch (eventType) {
     case 'new_message':
-      handleNewMessage(parsed as Message);
+      handleNewMessage(parsed.payload as Message);
       break;
     case 'user_joined':
       break;

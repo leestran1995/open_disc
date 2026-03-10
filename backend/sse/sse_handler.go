@@ -81,7 +81,6 @@ func (s *SseHandler) EstablishSSEConnection(c *gin.Context) {
 				continue
 			}
 			if role.HasCommonRole(&userRoles, message.Roles) {
-				slog.Info("message", message)
 				message.ClientMessageId = clientMessageId + 1
 				clientMessageId++
 				c.SSEvent(string(message.ServerEventType), message)

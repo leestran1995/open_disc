@@ -25,8 +25,7 @@ export interface Message {
   id: string;
   room_id: string;
   message: string;
-  timestamp: string;
-  username: string;
+  user_id: string;
 }
 
 /**

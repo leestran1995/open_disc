@@ -131,6 +131,25 @@ export interface EmojiSuggestion {
 /** Store shape: room ID → ordered message array. */
 export type MessagesByRoom = Record<string, Message[]>;
 
+/** Go: auth.CheckPasswordResult (service.go) */
+export interface PasswordStrengthResult {
+  has_uppercase: boolean;
+  has_lowercase: boolean;
+  has_number: boolean;
+  has_special: boolean;
+  has_eight_chars: boolean;
+}
+
+/** POST /check_password → gin.H{"data": CheckPasswordResult} */
+export interface CheckPasswordResponse {
+  data: PasswordStrengthResult;
+}
+
+/** POST /change_password → gin.H{"data": "ok"} */
+export interface ChangePasswordResponse {
+  data: string;
+}
+
 /** GET /events → gin.H{"server_events": [...]} */
 export interface ServerEventsResponse {
   server_events: ServerEvent[];

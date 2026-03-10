@@ -4,7 +4,7 @@ set -e
 
 FRONTEND_DIR="/home/lee/open_disc/open_disc/frontend"
 NGINX_ROOT="/var/www/html"
-BACKEND_DIR="/home/lee/open_disc/open_disc"
+BACKEND_DIR="/home/lee/open_disc/open_disc/backend"
 
 echo "Moving to frontend root"
 cd "$FRONTEND_DIR"
@@ -24,7 +24,7 @@ echo "Moving to backend root"
 cd "$BACKEND_DIR"
 
 echo "Building backend executable"
-go build internal/main/main.go
+go build main.go
 
 echo "Running backend"
 ./main

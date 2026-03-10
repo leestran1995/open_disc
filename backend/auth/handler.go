@@ -1,0 +1,159 @@
+package auth
+
+import (
+	"backend/user"
+	"net/http"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+type AuthHandler struct {
+	Auth         *Service
+	Token        *TokenService
+	UserSerivice *user.UserService
+}
+
+func NewAuthHandler(auth *Service, token *TokenService, userService *user.UserService) *AuthHandler {
+	return &AuthHandler{
+		Auth:         auth,
+		Token:        token,
+		UserSerivice: userService,
+	}
+}
+
+type SignInRequest struct {
+	Username string    `json:"username"`
+	Password string    `json:"password"`
+	Otc      uuid.UUID `json:"otc,omitempty"`
+}
+
+type CheckPasswordRequest struct {
+	Password string `json:"password"`
+}
+
+type ChangePasswordRequest struct {
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+}
+
+const signupRoute = "/signup"
+const signInRoute = "/signin"
+const checkPasswordRoute = "/check_password"
+const changePasswordRoute = "/change_password"
+
+func BindAuthRoutes(router *gin.Engine, authHandler *AuthHandler) {
+	router.POST(signInRoute, authHandler.HandleSignIn)
+	router.POST(signupRoute, authHandler.HandleSignUp)
+	router.POST(checkPasswordRoute, authHandler.CheckPassword)
+	router.POST(changePasswordRoute, authHandler.ChangePassword)
+}
+
+func (h *AuthHandler) HandleSignIn(c *gin.Context) {
+	var req SignInRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	signInResult, err := h.Auth.CheckPassword(req.Username, req.Password)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if !signInResult {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid username or password"})
+		return
+	}
+
+	mintedToken, err := h.Token.GenerateJWT(req.Username)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": mintedToken})
+}
+
+func (h *AuthHandler) HandleSignUp(c *gin.Context) {
+	var req SignInRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := h.Auth.Signup(req.Username, req.Password, req.Otc)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"data": "ok"})
+}
+
+func (h *AuthHandler) CheckPassword(c *gin.Context) {
+	var req CheckPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	result := CheckPasswordStrength(req.Password)
+
+	c.JSON(http.StatusOK, gin.H{"data": result})
+}
+
+func (h *AuthHandler) ChangePassword(c *gin.Context) {
+	var req ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	username := c.GetString("username")
+	err := h.Auth.ChangePassword(username, req.OldPassword, req.NewPassword)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": "ok"})
+}
+
+func AuthMiddleware(t *TokenService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		path := c.FullPath()
+
+		if path == signupRoute || path == signInRoute || path == checkPasswordRoute {
+			c.Next()
+			return
+		}
+
+		var bearerHeader = c.GetHeader("Authorization")
+		if bearerHeader == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{})
+		}
+
+		var startsWithBearer = strings.HasPrefix(bearerHeader, "Bearer ")
+		if !startsWithBearer {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{})
+		}
+		bearerToken := strings.TrimPrefix(bearerHeader, "Bearer ")
+		claims, err := t.ValidateJWT(bearerToken)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{})
+		}
+		c.Set("username", claims.Username)
+		c.Set("user_id", claims.UserID)
+
+		userRoles, err := t.UserService.GetUserRoles(c.Request.Context(), claims.UserID)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{})
+		}
+
+		c.Set("user_roles", userRoles)
+
+		c.Next()
+	}
+}

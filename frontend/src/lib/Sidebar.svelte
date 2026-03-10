@@ -3,11 +3,13 @@
   import { authToken, rooms, activeRoomId, currentUser, messagesByRoom } from './stores';
   import { get } from 'svelte/store';
   import ThemeToggle from './ThemeToggle.svelte';
+  import ChangePassword from './ChangePassword.svelte';
   import { connectSSE, disconnectSSE } from './sse';
   import type { Room } from './types';
 
   let newRoomName = $state('');
   let creating = $state(false);
+  let showChangePassword = $state(false);
 
   let draggedRoomId: string | null = $state(null);
   let dropTargetIndex: number | null = $state(null);
@@ -211,9 +213,16 @@
 
   <div class="sidebar-footer">
     <span class="username">{$currentUser?.username}</span>
-    <button class="logout" onclick={logout}>Log out</button>
+    <div class="footer-actions">
+      <button class="settings-btn" onclick={() => showChangePassword = true} title="Change password">{'\u2699'}</button>
+      <button class="logout" onclick={logout}>Log out</button>
+    </div>
   </div>
 </aside>
+
+{#if showChangePassword}
+  <ChangePassword onclose={() => showChangePassword = false} />
+{/if}
 
 <style>
   .sidebar {
@@ -362,6 +371,27 @@
   .username {
     color: var(--text-heading);
     font-weight: 600;
+  }
+
+  .footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .settings-btn {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1rem;
+    opacity: 0.7;
+    padding: 0.2em 0.3em;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .settings-btn:hover {
+    opacity: 1;
   }
 
   .logout {

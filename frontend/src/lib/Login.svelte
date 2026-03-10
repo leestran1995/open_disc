@@ -3,7 +3,9 @@
   import { currentUser, authToken, rooms } from './stores';
   import { connectSSE } from './sse';
   import { decodeJWT } from './jwt';
+  import { checkPasswordStrength, isPasswordValid } from './password';
   import ThemeToggle from './ThemeToggle.svelte';
+  import PasswordStrength from './PasswordStrength.svelte';
   import type { Room } from './types';
 
   let username = $state('');
@@ -13,6 +15,8 @@
   let message = $state('');
   let loading = $state(false);
   let mode: 'signin' | 'signup' = $state('signin');
+
+  let passwordValid = $derived(isPasswordValid(checkPasswordStrength(password)));
 
   async function handleSubmit(e: SubmitEvent): Promise<void> {
     e.preventDefault();
@@ -78,6 +82,7 @@
         disabled={loading}
       />
       {#if mode === 'signup'}
+      <PasswordStrength {password} />
       <input
         type="text"
         placeholder="One-Time Code (for sign up)"
@@ -85,7 +90,7 @@
         disabled={loading}
         />
         {/if}
-      <button type="submit" disabled={loading || !username.trim() || !password}>
+      <button type="submit" disabled={loading || !username.trim() || !password || (mode === 'signup' && !passwordValid)}>
         {loading ? (mode === 'signin' ? 'Signing in...' : 'Signing up...') : (mode === 'signin' ? 'Sign In' : 'Sign Up')}
       </button>
     </form>

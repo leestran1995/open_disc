@@ -13,7 +13,6 @@ let reconnectDelay = 1000;
 // --- SSE event handlers ---
 
 function handleNewMessage(msg: Message): void {
-  console.log(msg);
   if (!msg || !msg.room_id) return;
 
   if (msg.id) {

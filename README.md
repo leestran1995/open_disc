@@ -58,8 +58,8 @@ standard REST endpoints for server administration (that don't exist at the time 
 - `role make <role_name>`: Creates a new role 
 - `role delete <role_name>`: Deletes a role
 - `role ls` or `role list`: Lists all roles
-- `ur assign <role_name>`: Assigns a role to a user (ur stands for "user role")
-- `ur remove <role_name>`: Unassigns a role from a user
+- `ur assign <username> <role_name>`: Assigns a role to a user (ur stands for "user role")
+- `ur remove <username> <role_name>`: Unassigns a role from a user
 - `ur ls <username>` or `ur list <username>`: lists roles assigned to <username>
 -  `assignroomrole <room_name> <role_name>`: Assigns the room to the role
 - `removeroomrole <room_name> <role_name>`: Unassigns role from room

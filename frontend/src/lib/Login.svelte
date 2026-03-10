@@ -29,7 +29,7 @@
     if (mode === 'signup') {
       const result = await signup(username.trim(), password, otc);
       if (result && !('_error' in result)) {
-        message = 'Account created! Sign in below.';
+        message = 'Account created! Sign in above.';
         mode = 'signin';
       } else {
         error = result && '_error' in result ? result._error : 'Sign up failed.';

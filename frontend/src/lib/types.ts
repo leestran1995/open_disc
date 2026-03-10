@@ -26,6 +26,7 @@ export interface Message {
   room_id: string;
   message: string;
   user_id: string;
+  timestamp: string;
 }
 
 /**

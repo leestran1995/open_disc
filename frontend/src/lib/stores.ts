@@ -11,3 +11,4 @@ export const currentUser: Writable<{ username: string } | null> = writable(null)
 export const rooms: Writable<Room[]> = writable([]);
 export const activeRoomId: Writable<string | null> = writable(null);
 export const messagesByRoom: Writable<MessagesByRoom> = writable({});
+export const userIdUsernameMap: Writable<Record<string, string>> = writable({});

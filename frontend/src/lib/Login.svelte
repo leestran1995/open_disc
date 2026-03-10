@@ -29,6 +29,8 @@
     if (mode === 'signup') {
       const result = await signup(username.trim(), password, otc);
       if (result && !('_error' in result)) {
+        username = '';
+        password = '';
         message = 'Account created! Sign in above.';
         mode = 'signin';
       } else {

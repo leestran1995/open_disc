@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { signup, signin, getRooms } from './api';
+  import { signup, signin, getRooms, getMessages } from './api';
   import { currentUser, authToken, rooms } from './stores';
   import { connectSSE } from './sse';
   import { decodeJWT } from './jwt';
@@ -53,8 +53,13 @@
           loadAllUsers();
           getRooms().then((roomResult) => {
             if (Array.isArray(roomResult)) {
-              rooms.set(roomResult as Room[]);
+              const roomArray = roomResult as Room[];
+              rooms.set(roomArray);
               localStorage.setItem('rooms', JSON.stringify(roomResult));
+              roomArray.forEach((room) => {
+                const roomMessages = getMessages(room.id);
+                console.log('Messages for room', room.id, roomMessages);
+              }); 
             }
           });
         }

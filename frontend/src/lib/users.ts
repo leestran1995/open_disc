@@ -26,6 +26,7 @@ export function resolveUsername(userId: string): string {
  * and updates the store. Returns the display name.
  */
 export async function ensureUser(userId: string): Promise<string> {
+  console.log("Ensuring user ID:", userId);
   const map = get(userIdUsernameMap);
   if (map[userId]) return map[userId];
 
@@ -35,6 +36,10 @@ export async function ensureUser(userId: string): Promise<string> {
     const displayName = user.nickname || user.username;
     userIdUsernameMap.update((current) => ({ ...current, [userId]: displayName }));
     return displayName;
+  }
+
+  if (result && '_error' in result) {
+    console.error(`Error fetching user ${userId}:`, result._error);
   }
 
   return 'Unknown';

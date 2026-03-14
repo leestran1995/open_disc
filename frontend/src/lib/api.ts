@@ -72,7 +72,7 @@ export function getRoom(id: string): Promise<ApiResult<Room>> {
 /** GET /messages/:room_id — Go wraps in gin.H{"messages": [...]}.  */
 export function getMessages(roomId: string, timestamp?: string): Promise<ApiResult<MessagesResponse>> {
   const query = timestamp ? `?timestamp=${encodeURIComponent(timestamp)}` : '';
-  return request<MessagesResponse>(`/messages/${roomId}${query}`);
+  return request<MessagesResponse>(`/rooms/${roomId}/messages${query}`);
 }
 
 export function sendMessage(roomId: string, message: string): Promise<ApiResult<MessageCreateResponse>> {

@@ -25,8 +25,9 @@ func (s *Service) GetMessagesForRoom(c *gin.Context, roomId uuid.UUID, cursorTim
 	var messages []model.Message
 	rows, err := s.DB.Query(
 		c,
-		`SELECT id, room_id, user_id, message, timestamp FROM open_discord.messages WHERE room_id = $1 AND ($2 is null or timestamp < $2) ORDER BY timestamp DESC limit 25`,
+		`SELECT id, room_id, user_id, message, timestamp FROM open_discord.messages WHERE room_id = $1 AND ($2::timestamp is null or timestamp < $2::timestamp) ORDER BY timestamp DESC limit 25`,
 		roomId,
+		cursorTimestamp,
 	)
 
 	if err != nil {

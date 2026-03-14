@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createRoom, updateRoomOrder, starRoom, unstarRoom } from './api';
-  import { authToken, rooms, activeRoomId, currentUser, messagesByRoom } from './stores';
+  import { authToken, rooms, activeRoomId, currentUser, messagesByRoom, userIdUsernameMap } from './stores';
   import { get } from 'svelte/store';
   import ThemeToggle from './ThemeToggle.svelte';
   import ChangePassword from './ChangePassword.svelte';
@@ -126,6 +126,7 @@
     rooms.set([]);
     activeRoomId.set(null);
     messagesByRoom.set({});
+    userIdUsernameMap.set({});
   }
 </script>
 

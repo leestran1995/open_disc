@@ -1,5 +1,6 @@
 <script lang="ts">
   import { replaceEmoji } from './emoji';
+  import { userIdUsernameMap } from './stores';
   import type { Message } from './types';
 
   interface Props {
@@ -11,8 +12,7 @@
   let displayText = $derived(() => replaceEmoji(message.message));
 
   let displayName = $derived(() => {
-    if (message.username === 'system') return 'system';
-    return message.username;
+    return $userIdUsernameMap[message.user_id] ?? 'Unknown';
   });
 
   let time = $derived(() => {

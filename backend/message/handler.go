@@ -130,7 +130,7 @@ func (h *MessageHandler) HandleCreateMessage(c *gin.Context) {
 		return
 	}
 
-	_, err = h.ServerEventStore.Create(c, model.NewMessage, newRequest, &roomRoles)
+	_, err = h.ServerEventStore.Create(c, model.NewMessage, msg, &roomRoles)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}

@@ -1,6 +1,7 @@
 import { messagesByRoom, rooms } from './stores';
 import { getRooms } from './api';
-import type { Message, Room } from './types';
+import { ensureUser } from './users';
+import type { Message, Room, ServerEvent } from './types';
 
 // --- Module-level connection state ---
 
@@ -18,6 +19,11 @@ function handleNewMessage(msg: Message): void {
   if (msg.id) {
     if (seenIds.has(msg.id)) return;
     seenIds.add(msg.id);
+  }
+
+  // Pre-fetch unknown user so the map is ready for rendering
+  if (msg.user_id) {
+    ensureUser(msg.user_id);
   }
 
   messagesByRoom.update((current) => {
@@ -54,9 +60,11 @@ function handleEvent(eventType: string, rawData: string): void {
     parsed = rawData;
   }
 
+  const event = parsed as ServerEvent;
+
   switch (eventType) {
     case 'new_message':
-      handleNewMessage(parsed as Message);
+      handleNewMessage(event.payload as Message);
       break;
     case 'user_joined':
       break;

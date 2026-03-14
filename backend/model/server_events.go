@@ -35,10 +35,7 @@ type Message struct {
 	RoomID    uuid.UUID `json:"room_id"`
 	Message   string    `json:"message"`
 	TimeStamp time.Time `json:"timestamp"`
-
-	// The following fields are deprecated and should be removed once everything is migrated to ServerEvents
-	ID       uuid.UUID `json:"id"`
-	Username string    `json:"username"`
+	ID        uuid.UUID `json:"id"`
 }
 
 // UserConnectionEvent Applicable to either UserJoined or UserLeft event types

@@ -8,7 +8,6 @@ working someday, then we'd really be cooking.
 open_discord is intended to be self-hosted rather than centralized. Each server is a completely separate
 instance, so a user's username/password on `Server A` is completely separate from `Server B`.
 
-At the moment, all users in a server have access to all rooms in that server.
 
 ## Initial Setup And Running
 
@@ -25,14 +24,6 @@ simply run `migrate -source file://migrations -database [YOUR_DB_URL] up`
 
 ## Feature plans
 
-- Immediate next thing:
-  - Rescope messages -> ServerEvents
-  - Messages, users connecting/disconnecting, rooms being created, etc. are all ServerEvents
-  - ServerEvents are all stored on a single table with an auto-incrementing column
-  - Clients will use that auto-inc column for two purposes
-    - To know if they missed any events
-    - To know where the last event they received was, to re-sync with the server
-- ~~Room Ordering~~
 - Username color customization
 - Room Categories
 - Configurable nicknames
@@ -52,41 +43,36 @@ simply run `migrate -source file://migrations -database [YOUR_DB_URL] up`
 - User Presence
   - Use Redis to display whether a user is actively connected or not
 
-## Implementation Plans
 
-- Refactor rooms to each be run in its own goroutine
-- Rework `message` table to be scoped to any and all `RoomEvents`
-- 
+## CLI
 
-## Server Event Architecture & Approach
+Once the backend is finished spinning up it will go into CLI mode, which offers numerous
+functions for server administration. Notably, on a completely fresh server start, you will
+need to use the CLI to mint an OTC for your first (likely admin) user, and then you will
+need to use the CLI to make that user an admin. At the point, that admin user could use
+standard REST endpoints for server administration (that don't exist at the time I'm writing this).
 
-### Event Order
-ServerEvents will contain an incrementing event_order integer. This will allow the FE to know if it missed any events
-(for example, if the FE receives event 1000 followed by 1002, it knows it missed 1001) and request the missing events.
-It also provides an easy way for the FE to say "The last event I saw was _, give me everything since then"
+### CLI commands
 
-### Event Payloads
-Identifiers in server event payloads should be the unchanging unique identifier (uuid) for the related domain object.
-For optimization's sake, we might consider sending changeable data (for example, user nicknames in messages) along with the
-events to save the FE the need to do a lookup.
-
-## Jargon
-
-- UserID
-  - UUID unique identifier for a given user, safe to send in API Responses
-- Username
-  - The username a user uses to log in to the server. Best not to include in API Responses for security's sake
-- Nickname
-  - User-chosen nickname that will be displayed in the frontend
-- Server Event
-  - Event representing something that has happened in the server, such as a message being sent or a new user joining the server.
-- Room
-  - Text channel
+- `otc`: Generates an OTC for server signups
+- `role make <role_name>`: Creates a new role 
+- `role delete <role_name>`: Deletes a role
+- `role ls` or `role list`: Lists all roles
+- `ur assign <username> <role_name>`: Assigns a role to a user (ur stands for "user role")
+- `ur remove <username> <role_name>`: Unassigns a role from a user
+- `ur ls <username>` or `ur list <username>`: lists roles assigned to <username>
+-  `assignroomrole <room_name> <role_name>`: Assigns the room to the role
+- `removeroomrole <room_name> <role_name>`: Unassigns role from room
 
 ## Auth
 
 The whole point of this project is to avoid interacting with giant companies that don't care about user privacy
 (and coincidentally provide oauth services) so we're rolling our own username/password based verification.
+
+A user needs an OTC (One-Time-Code) in order to signup. This OTC must first be minted
+by a server admin. In the future, it would be neat for the OTC to come in the form
+of an invite URL, with the FE automatically passing it to the BE without the user
+needing to copy and past eit.
 
 2FA would be cool to implement, at some point.
 

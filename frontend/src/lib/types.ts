@@ -25,8 +25,8 @@ export interface Message {
   id: string;
   room_id: string;
   message: string;
+  user_id: string;
   timestamp: string;
-  username: string;
 }
 
 /**
@@ -41,6 +41,7 @@ export interface User {
   nickname: string;
   username: string;
   is_online: boolean;
+  roles: string[];
 }
 
 /**

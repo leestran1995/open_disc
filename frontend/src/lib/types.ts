@@ -41,6 +41,7 @@ export interface User {
   nickname: string;
   username: string;
   is_online: boolean;
+  roles: string[];
 }
 
 /**

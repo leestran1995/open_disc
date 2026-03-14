@@ -3,6 +3,7 @@
   import { currentUser, authToken, rooms } from './stores';
   import { connectSSE } from './sse';
   import { decodeJWT } from './jwt';
+  import { loadAllUsers } from './users';
   import { checkPasswordStrength, isPasswordValid } from './password';
   import ThemeToggle from './ThemeToggle.svelte';
   import PasswordStrength from './PasswordStrength.svelte';
@@ -49,6 +50,7 @@
           currentUser.set({ username: name });
           connectSSE(token, name);
 
+          loadAllUsers();
           getRooms().then((roomResult) => {
             if (Array.isArray(roomResult)) {
               rooms.set(roomResult as Room[]);

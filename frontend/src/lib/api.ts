@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import { authToken } from './stores';
-import type { ApiResult, SigninResponse, SignupResponse, MessagesResponse, MessageCreateResponse, Room, ServerEventsResponse, CheckPasswordResponse, ChangePasswordResponse } from './types';
+import type { ApiResult, SigninResponse, SignupResponse, MessagesResponse, MessageCreateResponse, Room, ServerEventsResponse, CheckPasswordResponse, ChangePasswordResponse, User } from './types';
 
 const BASE = import.meta.env.VITE_API_BASE || '/api';
 
@@ -114,6 +114,16 @@ export function getServerEvents(orderStart: number, orderEnd?: number): Promise<
   let query = `?event_order_start=${orderStart}`;
   if (orderEnd !== undefined) query += `&event_order_end=${orderEnd}`;
   return request<ServerEventsResponse>(`/events${query}`);
+}
+
+/** GET /users — returns all users with online status. */
+export function getAllUsers(): Promise<ApiResult<User[]>> {
+  return request<User[]>('/users');
+}
+
+/** GET /users/:id — returns a single user by ID. */
+export function getUserById(id: string): Promise<ApiResult<User>> {
+  return request<User>(`/users/${id}`);
 }
 
 /** POST /check_password — server-side password strength check. */

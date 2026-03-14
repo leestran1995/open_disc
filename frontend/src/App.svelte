@@ -4,6 +4,7 @@
   import { connectSSE } from './lib/sse';
   import { decodeJWT } from './lib/jwt';
   import { getRooms } from './lib/api';
+  import { loadAllUsers } from './lib/users';
   import Login from './lib/Login.svelte';
   import Sidebar from './lib/Sidebar.svelte';
   import RoomHeader from './lib/RoomHeader.svelte';
@@ -35,6 +36,7 @@
         }
 
         connectSSE(token, username);
+        loadAllUsers();
 
         getRooms().then((result) => {
           if (Array.isArray(result)) {

@@ -28,7 +28,7 @@ func NewUserService(db *pgxpool.Pool, clientRegistry *logic.ClientRegistry, redi
 
 func (u UserService) GetUserByID(ctx context.Context, userId uuid.UUID) (*User, error) {
 	var user User
-	row := u.DB.QueryRow(context.Background(), "select * from open_discord.users where id = $1", userId)
+	row := u.DB.QueryRow(context.Background(), "select id, nickname from open_discord.users where id = $1", userId)
 
 	err := row.Scan(&user.UserID, &user.Nickname)
 	if err != nil {

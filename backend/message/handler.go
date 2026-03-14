@@ -36,6 +36,7 @@ func NewMessageHandler(
 
 func BindMessageRoutes(router *gin.Engine, messageHandler *MessageHandler) {
 	router.POST("/messages", messageHandler.HandleCreateMessage)
+	router.GET("/rooms/:roomId/messages", messageHandler.HandleGetRoomMessages)
 }
 
 func (h *MessageHandler) HandleGetRoomMessages(c *gin.Context) {

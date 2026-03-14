@@ -180,10 +180,10 @@ func (s RoomService) GetRolesForRoom(ctx context.Context, roomId uuid.UUID) ([]s
 	redisKey := roomRoleRedisKey(roomId)
 	cachedRoles, err := s.RedisClient.Get(ctx, redisKey).Result()
 	if err == nil {
-		slog.Info("Cache hit for room roles", slog.String("room_id", roomId.String()))
+		slog.Debug("Cache hit for room roles", slog.String("room_id", roomId.String()))
 		return strings.Split(cachedRoles, ","), nil
 	} else {
-		slog.Info("Cache miss for room roles", slog.String("room_id", roomId.String()))
+		slog.Debug("Cache miss for room roles", slog.String("room_id", roomId.String()))
 		slog.Error(err.Error())
 	}
 

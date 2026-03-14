@@ -104,10 +104,10 @@ func (u UserService) GetUserRoles(ctx context.Context, userId uuid.UUID) ([]stri
 
 	cachedRoles, err := u.RedisClient.Get(ctx, redisKey).Result()
 	if err == nil {
-		slog.Info("Cache hit on get user roles", slog.String("user_id", userId.String()))
+		slog.Debug("Cache hit on get user roles", slog.String("user_id", userId.String()))
 		return strings.Split(cachedRoles, ";"), nil
 	} else {
-		slog.Info("Cache miss on get user roles", slog.String("user_id", userId.String()))
+		slog.Debug("Cache miss on get user roles", slog.String("user_id", userId.String()))
 		slog.Error(err.Error())
 	}
 
